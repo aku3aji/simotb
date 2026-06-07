@@ -120,7 +120,3 @@ simotb/
 Proyek ini dilisensikan di bawah [MIT License](LICENSE).
 
 ---
-
-<p align="center">
-  Dibuat dengan ❤️ untuk Toko Bangunan Sumber Alam Jaya
-</p>
