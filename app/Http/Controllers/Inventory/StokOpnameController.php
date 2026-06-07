@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Concerns\InteractsWithStok;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreStokOpnameRequest;
+use App\Http\Requests\Inventory\UpdateStokOpnameRequest;
 use App\Models\Barang;
 use App\Models\StokMutasi;
 use App\Models\StokOpname;
@@ -21,18 +22,26 @@ class StokOpnameController extends Controller
     {
         $q = $request->string('q')->trim()->toString();
         $tanggal = $request->string('tanggal')->trim()->toString();
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['nomor_opname', 'tanggal'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'tanggal';
+        }
 
         $stokOpname = StokOpname::query()
             ->with(['user'])
             ->withCount('detail')
             ->when($q !== '', fn ($query) => $query->where('nomor_opname', 'like', '%' . $q . '%'))
             ->when($tanggal !== '', fn ($query) => $query->whereDate('tanggal', $tanggal))
-            ->latest('tanggal')
-            ->latest('id')
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('inventory.stok-opname.index', compact('stokOpname', 'q', 'tanggal'));
+        return view('inventory.stok-opname.index', compact('stokOpname', 'q', 'tanggal', 'sortBy', 'sortDir', 'perPage'));
     }
 
     public function create(): View
@@ -43,6 +52,7 @@ class StokOpnameController extends Controller
                 ->aktif()
                 ->orderBy('nama')
                 ->get(),
+            'nomorOpname' => $this->generateNomor(),
         ]);
     }
 
@@ -107,15 +117,33 @@ class StokOpnameController extends Controller
             ->with('success', 'Stock opname berhasil disimpan.');
     }
 
+    public function show(StokOpname $stokOpname): View
+    {
+        $stokOpname->load(['detail.barang', 'user']);
+        return view('inventory.stok-opname.show', compact('stokOpname'));
+    }
+
     public function edit(StokOpname $stokOpname): RedirectResponse
     {
+        unset($stokOpname);
         return redirect()->route('inventory.stok-opname.index')
             ->with('error', 'Data stock opname yang sudah disimpan tidak dapat diubah.');
     }
 
     public function destroy(StokOpname $stokOpname): RedirectResponse
     {
+        unset($stokOpname);
         return redirect()->route('inventory.stok-opname.index')
             ->with('error', 'Data stock opname yang sudah disimpan tidak dapat dihapus.');
+    }
+
+    private function generateNomor(): string
+    {
+        $prefix = 'OPN-' . now()->format('Ymd') . '-';
+        $count = StokOpname::query()
+            ->where('nomor_opname', 'like', $prefix . '%')
+            ->lockForUpdate()
+            ->count();
+        return $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
     }
 }

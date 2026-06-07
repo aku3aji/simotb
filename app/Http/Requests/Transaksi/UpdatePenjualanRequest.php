@@ -26,6 +26,8 @@ class UpdatePenjualanRequest extends StorePenjualanRequest
             'detail.*.barang_id' => ['required', 'distinct', 'exists:barang,id'],
             'detail.*.jumlah' => ['required', 'integer', 'gte:1'],
             'detail.*.harga_jual' => ['required', 'numeric', 'gt:0'],
+            'newly_created_barang_ids' => ['nullable', 'array'],
+            'newly_created_barang_ids.*' => ['integer'],
         ];
     }
 }

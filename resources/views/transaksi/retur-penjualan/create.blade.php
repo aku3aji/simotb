@@ -11,6 +11,6 @@
 
     <form method="POST" action="{{ route('transaksi.retur-penjualan.store') }}">
         @csrf
-        @include('transaksi.retur-penjualan._form', ['submitLabel' => 'Simpan Retur'])
+        @include('transaksi.retur-penjualan._form', ['submitLabel' => 'Simpan Retur', 'nomorRetur' => $nomorRetur])
     </form>
 @endsection

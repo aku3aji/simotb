@@ -29,8 +29,29 @@ class PenjualanController extends Controller
         $tanggalMulai = $request->string('tanggal_mulai')->trim()->toString();
         $tanggalSelesai = $request->string('tanggal_selesai')->trim()->toString();
 
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['nomor_penjualan', 'tanggal', 'tipe_pembayaran', 'status_pembayaran'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'tanggal';
+        }
+
+        $statHariIni = Penjualan::query()
+            ->whereDate('tanggal', now()->toDateString())
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
+            ->first();
+
+        $statBulanIni = Penjualan::query()
+            ->whereBetween('tanggal', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
+            ->first();
+
         $penjualan = Penjualan::query()
             ->with(['pelanggan', 'user'])
+            ->withCount('returPenjualan')
+            ->withSum('returPenjualan', 'total_retur')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($subQuery) use ($q) {
                     $subQuery->where('nomor_penjualan', 'like', '%' . $q . '%')
@@ -41,9 +62,9 @@ class PenjualanController extends Controller
             ->when($statusPembayaran !== '', fn ($query) => $query->where('status_pembayaran', $statusPembayaran))
             ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
             ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
-            ->latest('tanggal')
-            ->latest('id')
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('transaksi.penjualan.index', compact(
@@ -52,13 +73,21 @@ class PenjualanController extends Controller
             'tipePembayaran',
             'statusPembayaran',
             'tanggalMulai',
-            'tanggalSelesai'
+            'tanggalSelesai',
+            'sortBy',
+            'sortDir',
+            'perPage',
+            'statHariIni',
+            'statBulanIni'
         ));
     }
 
     public function create(): View
     {
-        return view('transaksi.penjualan.create', $this->formData());
+        return view('transaksi.penjualan.create', array_merge(
+            $this->formData(),
+            ['nomorPenjualan' => $this->generateNomor()]
+        ));
     }
 
     public function store(StorePenjualanRequest $request): RedirectResponse
@@ -74,7 +103,9 @@ class PenjualanController extends Controller
         );
         $userId = (int) auth()->id();
 
-        DB::transaction(function () use ($validated, $detailRows, $total, $ringkasanPembayaran, $userId) {
+        $newlyCreatedIds = collect($validated['newly_created_barang_ids'] ?? []);
+
+        DB::transaction(function () use ($validated, $detailRows, $total, $ringkasanPembayaran, $userId, $newlyCreatedIds) {
             $barangMap = Barang::query()
                 ->whereIn('id', $detailRows->pluck('barang_id'))
                 ->lockForUpdate()
@@ -83,8 +114,7 @@ class PenjualanController extends Controller
 
             foreach ($detailRows as $item) {
                 $barang = $barangMap->get($item['barang_id']);
-
-                if ((int) $barang->stok < (int) $item['jumlah']) {
+                if (!$newlyCreatedIds->contains($item['barang_id']) && (int) $barang->stok < (int) $item['jumlah']) {
                     throw ValidationException::withMessages([
                         'detail' => ['Stok barang ' . $barang->nama . ' tidak mencukupi.'],
                     ]);
@@ -92,7 +122,7 @@ class PenjualanController extends Controller
             }
 
             $penjualan = Penjualan::create([
-                'nomor_penjualan' => $validated['nomor_penjualan'],
+                'nomor_penjualan' => $this->generateNomor(),
                 'pelanggan_id' => $validated['pelanggan_id'] ?? null,
                 'tanggal' => $validated['tanggal'],
                 'tipe_pembayaran' => $validated['tipe_pembayaran'],
@@ -134,9 +164,35 @@ class PenjualanController extends Controller
             ->with('success', 'Transaksi penjualan berhasil disimpan.');
     }
 
+    public function show(Penjualan $penjualan): View
+    {
+        $penjualan->load([
+            'detail.barang',
+            'pelanggan',
+            'user',
+            'returPenjualan.detail.barang',
+            'pembayaranPiutang',
+        ]);
+
+        $returByBarang = $penjualan->returPenjualan
+            ->flatMap(fn ($retur) => $retur->detail)
+            ->groupBy('barang_id')
+            ->map(fn ($items) => $items->sum('jumlah'));
+
+        $totalRetur = (float) $penjualan->returPenjualan->sum('total_retur');
+        $effectiveTotal = max(0, (float) $penjualan->total - $totalRetur);
+
+        return view('transaksi.penjualan.show', compact(
+            'penjualan',
+            'returByBarang',
+            'totalRetur',
+            'effectiveTotal'
+        ));
+    }
+
     public function edit(Penjualan $penjualan): View
     {
-        $penjualan->load('detail');
+        $penjualan->load(['detail', 'returPenjualan']);
 
         return view('transaksi.penjualan.edit', array_merge(
             $this->formData(),
@@ -156,8 +212,9 @@ class PenjualanController extends Controller
             $validated['jatuh_tempo'] ?? null
         );
         $userId = (int) auth()->id();
+        $newlyCreatedIds = collect($validated['newly_created_barang_ids'] ?? []);
 
-        DB::transaction(function () use ($validated, $detailRows, $newDetails, $ringkasanPembayaran, $penjualan, $userId) {
+        DB::transaction(function () use ($validated, $detailRows, $newDetails, $ringkasanPembayaran, $penjualan, $userId, $newlyCreatedIds) {
             $penjualan = Penjualan::query()->lockForUpdate()->findOrFail($penjualan->id);
 
             if ($penjualan->pembayaranPiutang()->exists() || $penjualan->returPenjualan()->exists()) {
@@ -181,7 +238,7 @@ class PenjualanController extends Controller
                 $newQty = (int) data_get($newDetails->get($barangId), 'jumlah', 0);
                 $stokBaru = (int) $barang->stok - ($newQty - $oldQty);
 
-                if ($stokBaru < 0) {
+                if ($stokBaru < 0 && !$newlyCreatedIds->contains($barangId)) {
                     throw ValidationException::withMessages([
                         'detail' => ['Perubahan penjualan membuat stok barang ' . $barang->nama . ' tidak mencukupi.'],
                     ]);
@@ -218,17 +275,19 @@ class PenjualanController extends Controller
                 $barang->stok = $stokSesudah;
                 $barang->save();
 
-                $this->catatMutasiStok(
-                    $barang,
-                    $delta >= 0 ? StokMutasi::TIPE_KELUAR : StokMutasi::TIPE_MASUK,
-                    StokMutasi::SUMBER_PENJUALAN,
-                    $penjualan->id,
-                    abs($delta),
-                    $stokSebelum,
-                    $stokSesudah,
-                    $userId,
-                    'Penyesuaian stok dari perubahan transaksi penjualan.'
-                );
+                if ($delta !== 0) {
+                    $this->catatMutasiStok(
+                        $barang,
+                        $delta >= 0 ? StokMutasi::TIPE_KELUAR : StokMutasi::TIPE_MASUK,
+                        StokMutasi::SUMBER_PENJUALAN,
+                        $penjualan->id,
+                        abs($delta),
+                        $stokSebelum,
+                        $stokSesudah,
+                        $userId,
+                        'Penyesuaian stok dari perubahan transaksi penjualan.'
+                    );
+                }
             }
         });
 
@@ -240,6 +299,16 @@ class PenjualanController extends Controller
     {
         return redirect()->route('transaksi.penjualan.index')
             ->with('error', 'Transaksi penjualan yang sudah tersimpan tidak dapat dihapus.');
+    }
+
+    private function generateNomor(): string
+    {
+        $prefix = 'PJL-' . now()->format('Ymd') . '-';
+        $count = Penjualan::query()
+            ->where('nomor_penjualan', 'like', $prefix . '%')
+            ->lockForUpdate()
+            ->count();
+        return $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
     }
 
     private function formData(): array

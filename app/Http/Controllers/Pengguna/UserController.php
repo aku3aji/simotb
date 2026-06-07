@@ -19,6 +19,14 @@ class UserController extends Controller
         $q = $request->string('q')->trim()->toString();
         $role = $request->string('role')->trim()->toString();
         $status = $request->string('status')->trim()->toString();
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'asc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['name', 'role', 'created_at'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'name';
+        }
 
         $users = User::query()
             ->with('pegawai')
@@ -31,11 +39,12 @@ class UserController extends Controller
             })
             ->when($role !== '', fn ($query) => $query->where('role', $role))
             ->when($status !== '', fn ($query) => $query->where('is_active', $status === 'aktif'))
-            ->latest()
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('pengguna.user.index', compact('users', 'q', 'role', 'status'));
+        return view('pengguna.user.index', compact('users', 'q', 'role', 'status', 'sortBy', 'sortDir', 'perPage'));
     }
 
     public function create(): View

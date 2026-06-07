@@ -20,6 +20,14 @@ class PembayaranPiutangController extends Controller
         $q = $request->string('q')->trim()->toString();
         $tanggalMulai = $request->string('tanggal_mulai')->trim()->toString();
         $tanggalSelesai = $request->string('tanggal_selesai')->trim()->toString();
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['tanggal'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'tanggal';
+        }
 
         $piutangOutstanding = Penjualan::query()
             ->with(['pelanggan', 'pembayaranPiutang'])
@@ -49,9 +57,9 @@ class PembayaranPiutangController extends Controller
             })
             ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
             ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
-            ->latest('tanggal')
-            ->latest('id')
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('transaksi.pembayaran-piutang.index', compact(
@@ -60,7 +68,10 @@ class PembayaranPiutangController extends Controller
             'pembayaranPiutang',
             'q',
             'tanggalMulai',
-            'tanggalSelesai'
+            'tanggalSelesai',
+            'sortBy',
+            'sortDir',
+            'perPage'
         ));
     }
 
@@ -161,10 +172,9 @@ class PembayaranPiutangController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($pembayaranPiutang->penjualan_id);
 
-            $dibayarBaru = max(0, (float) $penjualan->dibayar - (float) $pembayaranPiutang->jumlah_bayar);
-
             $pembayaranPiutang->delete();
 
+            $dibayarBaru = (float) PembayaranPiutang::where('penjualan_id', $penjualan->id)->sum('jumlah_bayar');
             $this->syncPaymentSummary($penjualan, $dibayarBaru);
         });
 
@@ -215,7 +225,9 @@ class PembayaranPiutangController extends Controller
 
     private function syncPaymentSummary(Penjualan $penjualan, float $dibayar): void
     {
-        $sisaPiutang = max(0, (float) $penjualan->total - $dibayar);
+        $totalRetur = (float) $penjualan->returPenjualan()->sum('total_retur');
+        $effectiveTotal = max(0, (float) $penjualan->total - $totalRetur);
+        $sisaPiutang = max(0, $effectiveTotal - $dibayar);
 
         $penjualan->update([
             'dibayar' => $dibayar,

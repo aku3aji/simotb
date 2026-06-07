@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\Inventory\StokOpnameController;
 use App\Http\Controllers\Laporan\LaporanController;
 use App\Http\Controllers\MasterData\BarangController;
@@ -39,6 +41,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
+    Route::get('profil', [ProfilController::class, 'edit'])->name('profil.edit');
+    Route::patch('profil', [ProfilController::class, 'update'])->name('profil.update');
+
+    Route::get('notifikasi/data', [NotifikasiController::class, 'data'])->name('notifikasi.data');
+    Route::post('notifikasi/baca-semua', [NotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
+
     Route::prefix('master-data')
         ->as('master-data.')
         ->group(function () {
@@ -49,18 +57,18 @@ Route::middleware('auth')->group(function () {
             Route::delete('merek/bulk-destroy', [MerekController::class, 'destroyBulk'])->name('merek.bulk-destroy');
             Route::resource('merek', MerekController::class)->except(['show']);
             Route::delete('vendor/bulk-destroy', [VendorController::class, 'destroyBulk'])->name('vendor.bulk-destroy');
-            Route::resource('vendor', VendorController::class)->except(['show']);
+            Route::resource('vendor', VendorController::class);
             Route::delete('pelanggan/bulk-destroy', [PelangganController::class, 'destroyBulk'])->name('pelanggan.bulk-destroy');
-            Route::resource('pelanggan', PelangganController::class)->except(['show']);
+            Route::resource('pelanggan', PelangganController::class);
             Route::delete('barang/bulk-destroy', [BarangController::class, 'destroyBulk'])->name('barang.bulk-destroy');
-            Route::resource('barang', BarangController::class)->except(['show']);
+            Route::resource('barang', BarangController::class);
         });
 
     Route::prefix('inventory')
         ->as('inventory.')
         ->group(function () {
             Route::resource('stok-opname', StokOpnameController::class)
-                ->only(['index', 'create', 'store']);
+                ->only(['index', 'create', 'store', 'show', 'destroy']);
         });
 
     Route::prefix('transaksi')
@@ -70,17 +78,18 @@ Route::middleware('auth')->group(function () {
                 ->only(['index', 'create', 'store', 'edit', 'update']);
 
             Route::resource('penjualan', PenjualanController::class)
-                ->only(['index', 'create', 'store', 'edit', 'update']);
+                ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
             Route::delete('pembayaran-piutang/bulk-destroy', [PembayaranPiutangController::class, 'destroyBulk'])->name('pembayaran-piutang.bulk-destroy');
             Route::resource('pembayaran-piutang', PembayaranPiutangController::class)
                 ->except(['show']);
 
             Route::resource('retur-penjualan', ReturPenjualanController::class)
-                ->only(['index', 'create', 'store', 'edit', 'update']);
+                ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
         });
 
-    Route::prefix('pegawai')
+    Route::middleware('owner')
+        ->prefix('pegawai')
         ->as('pegawai.')
         ->group(function () {
             Route::delete('pegawai/bulk-destroy', [PegawaiController::class, 'destroyBulk'])->name('pegawai.bulk-destroy');
@@ -99,7 +108,8 @@ Route::middleware('auth')->group(function () {
             Route::resource('user', UserController::class)->except(['show']);
         });
 
-    Route::prefix('laporan')
+    Route::middleware('owner')
+        ->prefix('laporan')
         ->as('laporan.')
         ->group(function () {
             Route::get('stok', [LaporanController::class, 'stok'])->name('stok');

@@ -25,7 +25,7 @@
 
     <section class="surface overflow-hidden">
         <form method="GET" class="border-b border-slate-200 px-5 py-4">
-            <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
+            <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto_auto]">
                 <div class="relative">
                     <x-ui.icon name="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari nama user, email, atau pegawai">
@@ -40,6 +40,11 @@
                     <option value="aktif" @selected($status === 'aktif')>Aktif</option>
                     <option value="nonaktif" @selected($status === 'nonaktif')>Nonaktif</option>
                 </select>
+                <select name="per_page" class="select-field" onchange="this.form.submit()">
+                    <option value="10" @selected($perPage == 10)>10 / hal</option>
+                    <option value="25" @selected($perPage == 25)>25 / hal</option>
+                    <option value="50" @selected($perPage == 50)>50 / hal</option>
+                </select>
                 <button type="submit" class="btn btn-secondary">Filter</button>
             </div>
         </form>
@@ -52,11 +57,11 @@
                     <thead>
                         <tr>
                             <th class="w-10 !px-3"><input type="checkbox" data-select-all form="bulk-form" class="h-4 w-4 cursor-pointer rounded"></th>
-                            <th>User</th>
-                            <th>Role</th>
+                            <x-ui.sortable-th column="name" label="User" :sort-by="$sortBy" :sort-dir="$sortDir" />
+                            <x-ui.sortable-th column="role" label="Role" :sort-by="$sortBy" :sort-dir="$sortDir" />
                             <th>Pegawai</th>
                             <th>Status</th>
-                            <th>Dibuat</th>
+                            <x-ui.sortable-th column="created_at" label="Dibuat" :sort-by="$sortBy" :sort-dir="$sortDir" />
                             <th class="!text-center">Aksi</th>
                         </tr>
                     </thead>

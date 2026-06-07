@@ -27,6 +27,14 @@ class ReturPenjualanController extends Controller
         $q = $request->string('q')->trim()->toString();
         $tanggalMulai = $request->string('tanggal_mulai')->trim()->toString();
         $tanggalSelesai = $request->string('tanggal_selesai')->trim()->toString();
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['nomor_retur', 'tanggal'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'tanggal';
+        }
 
         $returPenjualan = ReturPenjualan::query()
             ->with(['penjualan.pelanggan', 'user'])
@@ -39,16 +47,19 @@ class ReturPenjualanController extends Controller
             })
             ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
             ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
-            ->latest('tanggal')
-            ->latest('id')
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('transaksi.retur-penjualan.index', compact(
             'returPenjualan',
             'q',
             'tanggalMulai',
-            'tanggalSelesai'
+            'tanggalSelesai',
+            'sortBy',
+            'sortDir',
+            'perPage'
         ));
     }
 
@@ -56,6 +67,7 @@ class ReturPenjualanController extends Controller
     {
         return view('transaksi.retur-penjualan.create', [
             'penjualanList' => $this->penjualanList(),
+            'nomorRetur' => $this->generateNomor(),
         ]);
     }
 
@@ -112,10 +124,20 @@ class ReturPenjualanController extends Controller
                     'Penambahan stok dari retur penjualan.'
                 );
             }
+
+            $penjualan = Penjualan::query()->lockForUpdate()->findOrFail($validated['penjualan_id']);
+            $totalRetur = (float) $penjualan->returPenjualan()->sum('total_retur');
+            $this->recalculatePiutang($penjualan, $totalRetur);
         });
 
         return redirect()->route('transaksi.retur-penjualan.index')
             ->with('success', 'Retur penjualan berhasil disimpan.');
+    }
+
+    public function show(ReturPenjualan $returPenjualan): View
+    {
+        $returPenjualan->load(['detail.barang', 'penjualan.pelanggan', 'user']);
+        return view('transaksi.retur-penjualan.show', compact('returPenjualan'));
     }
 
     public function edit(ReturPenjualan $returPenjualan): View
@@ -180,6 +202,10 @@ class ReturPenjualanController extends Controller
                 $returPenjualan->detail()->create($item);
             }
 
+            $penjualan = Penjualan::query()->lockForUpdate()->findOrFail($returPenjualan->penjualan_id);
+            $totalRetur = (float) $penjualan->returPenjualan()->sum('total_retur');
+            $this->recalculatePiutang($penjualan, $totalRetur);
+
             foreach ($affectedBarangIds as $barangId) {
                 $barang = $barangMap->get($barangId);
                 $oldStockEffect = $this->stockEffect($existingDetails->get($barangId));
@@ -215,6 +241,16 @@ class ReturPenjualanController extends Controller
             ->with('error', 'Retur penjualan yang sudah tersimpan tidak dapat dihapus.');
     }
 
+    private function generateNomor(): string
+    {
+        $prefix = 'RTR-' . now()->format('Ymd') . '-';
+        $count = ReturPenjualan::query()
+            ->where('nomor_retur', 'like', $prefix . '%')
+            ->lockForUpdate()
+            ->count();
+        return $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+    }
+
     private function penjualanList(?int $currentPenjualanId = null)
     {
         return Penjualan::query()
@@ -245,6 +281,23 @@ class ReturPenjualanController extends Controller
                 'kondisi_barang' => $item['kondisi_barang'],
             ];
         });
+    }
+
+    private function recalculatePiutang(Penjualan $penjualan, float $totalRetur): void
+    {
+        $effectiveTotal = max(0, (float) $penjualan->total - $totalRetur);
+        $sisaPiutang = max(0, $effectiveTotal - (float) $penjualan->dibayar);
+
+        $status = match(true) {
+            $sisaPiutang <= 0 => Penjualan::STATUS_LUNAS,
+            (float) $penjualan->dibayar > 0 => Penjualan::STATUS_SEBAGIAN,
+            default => Penjualan::STATUS_BELUM_LUNAS,
+        };
+
+        $penjualan->update([
+            'sisa_piutang' => $sisaPiutang,
+            'status_pembayaran' => $status,
+        ]);
     }
 
     private function stockEffect(mixed $detail): int

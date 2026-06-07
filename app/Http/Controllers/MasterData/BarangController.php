@@ -24,6 +24,14 @@ class BarangController extends Controller
     public function index(Request $request): View
     {
         $q = $request->string('q')->trim()->toString();
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'asc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['nama', 'kode_barang', 'stok', 'stok_minimum'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'nama';
+        }
 
         $barang = Barang::query()
             ->with(['kategori', 'satuan', 'merek'])
@@ -35,11 +43,12 @@ class BarangController extends Controller
                         ->orWhereHas('merek', fn ($merek) => $merek->where('nama', 'like', '%' . $q . '%'));
                 });
             })
-            ->latest()
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('master-data.barang.index', compact('barang', 'q'));
+        return view('master-data.barang.index', compact('barang', 'q', 'sortBy', 'sortDir', 'perPage'));
     }
 
     public function create(): View
@@ -75,6 +84,19 @@ class BarangController extends Controller
             ->with('success', 'Barang berhasil ditambahkan.');
     }
 
+    public function show(Barang $barang): View
+    {
+        $barang->load(['kategori', 'satuan', 'merek']);
+
+        $riwayatHarga = $barang->pembelianDetail()
+            ->with('pembelian.vendor')
+            ->latest()
+            ->limit(30)
+            ->get();
+
+        return view('master-data.barang.show', compact('barang', 'riwayatHarga'));
+    }
+
     public function edit(Barang $barang): View
     {
         return view('master-data.barang.edit', array_merge(
@@ -88,13 +110,21 @@ class BarangController extends Controller
         $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
-        $isOwner = auth()->user()->isOwner();
-        $data['stok'] = ($isOwner && isset($data['stok'])) ? $data['stok'] : $barang->stok;
+        /** @var \App\Models\User $authUser */
+        $authUser = auth()->user();
+        $isOwner = $authUser->isOwner();
+        $stokBaru = ($isOwner && isset($data['stok'])) ? (int) $data['stok'] : null;
 
-        $stokSebelum = (int) $barang->stok;
-        $stokSesudah = (int) $data['stok'];
+        DB::transaction(function () use ($barang, $data, $isOwner, $stokBaru) {
+            $stokSebelum = (int) Barang::query()->lockForUpdate()->where('id', $barang->id)->value('stok');
+            $stokSesudah = $stokBaru ?? $stokSebelum;
 
-        DB::transaction(function () use ($barang, $data, $stokSebelum, $stokSesudah) {
+            if (!$isOwner) {
+                unset($data['stok']);
+            } else {
+                $data['stok'] = $stokSesudah;
+            }
+
             $barang->update($data);
 
             if ($stokSebelum !== $stokSesudah) {

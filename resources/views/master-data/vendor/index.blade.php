@@ -25,11 +25,16 @@
 
     <section class="surface overflow-hidden">
         <form method="GET" class="border-b border-slate-200 px-5 py-4">
-            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
                 <div class="relative">
                     <x-ui.icon name="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari vendor, PIC, telepon, atau email">
                 </div>
+                <select name="per_page" class="select-field" onchange="this.form.submit()">
+                    <option value="10" @selected($perPage == 10)>10 / hal</option>
+                    <option value="25" @selected($perPage == 25)>25 / hal</option>
+                    <option value="50" @selected($perPage == 50)>50 / hal</option>
+                </select>
                 <button type="submit" class="btn btn-secondary">Filter</button>
             </div>
         </form>
@@ -42,7 +47,7 @@
                     <thead>
                         <tr>
                             <th class="w-10 !px-3"><input type="checkbox" data-select-all form="bulk-form" class="h-4 w-4 cursor-pointer rounded"></th>
-                            <th>Vendor</th>
+                            <x-ui.sortable-th column="nama" label="Vendor" :sort-by="$sortBy" :sort-dir="$sortDir" />
                             <th>Kontak</th>
                             <th>Alamat</th>
                             <th class="!text-center">Aksi</th>
@@ -63,6 +68,9 @@
                                 <td>{{ $item->alamat ?: '-' }}</td>
                                 <td>
                                     <div class="flex justify-center gap-2">
+                                        <a href="{{ route('master-data.vendor.show', $item) }}" class="btn btn-secondary px-3 py-2">
+                                            <x-ui.icon name="eye" class="h-4 w-4" />
+                                        </a>
                                         <a href="{{ route('master-data.vendor.edit', $item) }}" class="btn btn-secondary px-3 py-2">
                                             <x-ui.icon name="pencil" class="h-4 w-4" />
                                         </a>

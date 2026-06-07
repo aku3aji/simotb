@@ -29,6 +29,25 @@ class PembelianController extends Controller
         $tanggalMulai = $request->string('tanggal_mulai')->trim()->toString();
         $tanggalSelesai = $request->string('tanggal_selesai')->trim()->toString();
 
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['nomor_pembelian', 'tanggal'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'tanggal';
+        }
+
+        $statHariIni = Pembelian::query()
+            ->whereDate('tanggal', now()->toDateString())
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
+            ->first();
+
+        $statBulanIni = Pembelian::query()
+            ->whereBetween('tanggal', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
+            ->first();
+
         $pembelian = Pembelian::query()
             ->with(['vendor', 'user'])
             ->when($q !== '', function ($query) use ($q) {
@@ -40,13 +59,14 @@ class PembelianController extends Controller
             ->when($vendorId !== '', fn ($query) => $query->where('vendor_id', $vendorId))
             ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
             ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
-            ->latest('tanggal')
-            ->latest('id')
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('transaksi.pembelian.index', array_merge(
-            compact('pembelian', 'q', 'vendorId', 'tanggalMulai', 'tanggalSelesai'),
+            compact('pembelian', 'q', 'vendorId', 'tanggalMulai', 'tanggalSelesai',
+                    'sortBy', 'sortDir', 'perPage', 'statHariIni', 'statBulanIni'),
             [
                 'vendorList' => Vendor::query()->orderBy('nama')->get(),
             ]
@@ -55,7 +75,10 @@ class PembelianController extends Controller
 
     public function create(): View
     {
-        return view('transaksi.pembelian.create', $this->formData());
+        return view('transaksi.pembelian.create', array_merge(
+            $this->formData(),
+            ['nomorPembelian' => $this->generateNomor()]
+        ));
     }
 
     public function store(StorePembelianRequest $request): RedirectResponse
@@ -67,7 +90,7 @@ class PembelianController extends Controller
 
         DB::transaction(function () use ($validated, $detailRows, $total, $userId) {
             $pembelian = Pembelian::create([
-                'nomor_pembelian' => $validated['nomor_pembelian'],
+                'nomor_pembelian' => $this->generateNomor(),
                 'vendor_id' => $validated['vendor_id'],
                 'tanggal' => $validated['tanggal'],
                 'total' => $total,
@@ -187,17 +210,19 @@ class PembelianController extends Controller
                 $barang->stok = $stokSesudah;
                 $barang->save();
 
-                $this->catatMutasiStok(
-                    $barang,
-                    $delta >= 0 ? StokMutasi::TIPE_MASUK : StokMutasi::TIPE_KELUAR,
-                    StokMutasi::SUMBER_PEMBELIAN,
-                    $pembelian->id,
-                    abs($delta),
-                    $stokSebelum,
-                    $stokSesudah,
-                    $userId,
-                    'Penyesuaian stok dari perubahan transaksi pembelian.'
-                );
+                if ($delta !== 0) {
+                    $this->catatMutasiStok(
+                        $barang,
+                        $delta >= 0 ? StokMutasi::TIPE_MASUK : StokMutasi::TIPE_KELUAR,
+                        StokMutasi::SUMBER_PEMBELIAN,
+                        $pembelian->id,
+                        abs($delta),
+                        $stokSebelum,
+                        $stokSesudah,
+                        $userId,
+                        'Penyesuaian stok dari perubahan transaksi pembelian.'
+                    );
+                }
             }
         });
 
@@ -209,6 +234,16 @@ class PembelianController extends Controller
     {
         return redirect()->route('transaksi.pembelian.index')
             ->with('error', 'Transaksi pembelian yang sudah tersimpan tidak dapat dihapus.');
+    }
+
+    private function generateNomor(): string
+    {
+        $prefix = 'PBL-' . now()->format('Ymd') . '-';
+        $count = Pembelian::query()
+            ->where('nomor_pembelian', 'like', $prefix . '%')
+            ->lockForUpdate()
+            ->count();
+        return $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
     }
 
     private function formData(): array

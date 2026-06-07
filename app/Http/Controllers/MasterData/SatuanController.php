@@ -16,17 +16,26 @@ class SatuanController extends Controller
     public function index(Request $request): View
     {
         $q = $request->string('q')->trim()->toString();
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'asc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['nama', 'singkatan', 'created_at'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'nama';
+        }
 
         $satuan = Satuan::query()
             ->when($q !== '', function ($query) use ($q) {
                 $query->where('nama', 'like', '%' . $q . '%')
                     ->orWhere('singkatan', 'like', '%' . $q . '%');
             })
-            ->latest()
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('master-data.satuan.index', compact('satuan', 'q'));
+        return view('master-data.satuan.index', compact('satuan', 'q', 'sortBy', 'sortDir', 'perPage'));
     }
 
     public function create(): View

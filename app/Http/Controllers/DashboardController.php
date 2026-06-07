@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\PembayaranPiutang;
 use App\Models\Pembelian;
 use App\Models\Penjualan;
+use App\Models\ReturPenjualan;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
@@ -15,9 +17,13 @@ class DashboardController extends Controller
         $awalBulan = Carbon::now()->startOfMonth();
         $akhirBulan = Carbon::now()->endOfMonth();
 
-        $totalPenjualan = Penjualan::query()
+        $totalReturBulanIni = (float) ReturPenjualan::query()
             ->whereBetween('tanggal', [$awalBulan->toDateString(), $akhirBulan->toDateString()])
-            ->sum('total');
+            ->sum('total_retur');
+
+        $totalPenjualan = max(0, (float) Penjualan::query()
+            ->whereBetween('tanggal', [$awalBulan->toDateString(), $akhirBulan->toDateString()])
+            ->sum('total') - $totalReturBulanIni);
 
         $totalPembelian = Pembelian::query()
             ->whereBetween('tanggal', [$awalBulan->toDateString(), $akhirBulan->toDateString()])
@@ -31,6 +37,44 @@ class DashboardController extends Controller
         $totalPiutang = Penjualan::query()
             ->kredit()
             ->sum('sisa_piutang');
+
+        $start = now()->subDays(29)->toDateString();
+        $end   = now()->toDateString();
+
+        $chartPenjualan = Penjualan::query()
+            ->selectRaw('DATE(tanggal) as hari, SUM(total) as total')
+            ->whereBetween('tanggal', [$start, $end])
+            ->groupBy('hari')->get()->keyBy('hari');
+
+        $chartPembelian = Pembelian::query()
+            ->selectRaw('DATE(tanggal) as hari, SUM(total) as total')
+            ->whereBetween('tanggal', [$start, $end])
+            ->groupBy('hari')->get()->keyBy('hari');
+
+        $chartRetur = ReturPenjualan::query()
+            ->selectRaw('DATE(tanggal) as hari, SUM(total_retur) as total')
+            ->whereBetween('tanggal', [$start, $end])
+            ->groupBy('hari')->get()->keyBy('hari');
+
+        $chartPiutang = PembayaranPiutang::query()
+            ->selectRaw('DATE(tanggal) as hari, SUM(jumlah_bayar) as total')
+            ->whereBetween('tanggal', [$start, $end])
+            ->groupBy('hari')->get()->keyBy('hari');
+
+        $chartLabels          = [];
+        $chartValuesPenjualan = [];
+        $chartValuesPembelian = [];
+        $chartValuesRetur     = [];
+        $chartValuesPiutang   = [];
+
+        for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+            $chartLabels[]          = Carbon::parse($date)->format('d/m');
+            $chartValuesPenjualan[] = (float) ($chartPenjualan->get($date)?->total ?? 0);
+            $chartValuesPembelian[] = (float) ($chartPembelian->get($date)?->total ?? 0);
+            $chartValuesRetur[]     = (float) ($chartRetur->get($date)?->total ?? 0);
+            $chartValuesPiutang[]   = (float) ($chartPiutang->get($date)?->total ?? 0);
+        }
 
         $penjualanTerbaru = Penjualan::query()
             ->with(['pelanggan', 'user'])
@@ -51,10 +95,16 @@ class DashboardController extends Controller
         return view('dashboard.index', compact(
             'totalPenjualan',
             'totalPembelian',
+            'totalReturBulanIni',
             'stokMenipis',
             'totalPiutang',
             'penjualanTerbaru',
-            'barangMenipis'
+            'barangMenipis',
+            'chartLabels',
+            'chartValuesPenjualan',
+            'chartValuesPembelian',
+            'chartValuesRetur',
+            'chartValuesPiutang'
         ));
     }
 }

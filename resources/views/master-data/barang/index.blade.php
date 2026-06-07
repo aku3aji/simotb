@@ -25,11 +25,16 @@
 
     <section class="surface overflow-hidden">
         <form method="GET" class="border-b border-slate-200 px-5 py-4">
-            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
                 <div class="relative">
                     <x-ui.icon name="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari SKU, nama barang, kategori, atau merek...">
                 </div>
+                <select name="per_page" class="select-field" onchange="this.form.submit()">
+                    <option value="10" @selected($perPage == 10)>10 / hal</option>
+                    <option value="25" @selected($perPage == 25)>25 / hal</option>
+                    <option value="50" @selected($perPage == 50)>50 / hal</option>
+                </select>
                 <div class="flex gap-3">
                     <button type="submit" class="btn btn-secondary">Cari</button>
                     @if ($q)
@@ -47,12 +52,12 @@
                     <thead>
                         <tr>
                             <th class="w-10 !px-3"><input type="checkbox" data-select-all form="bulk-form" class="h-4 w-4 cursor-pointer rounded"></th>
-                            <th>Nama Barang & SKU</th>
+                            <x-ui.sortable-th column="nama" label="Nama Barang & SKU" :sort-by="$sortBy" :sort-dir="$sortDir" />
                             <th>Kategori</th>
                             <th>Merek</th>
                             <th>Satuan</th>
                             <th>Harga Jual</th>
-                            <th>Stok</th>
+                            <x-ui.sortable-th column="stok" label="Stok" :sort-by="$sortBy" :sort-dir="$sortDir" />
                             <th>Status</th>
                             <th class="!text-center">Aksi</th>
                         </tr>
@@ -85,13 +90,16 @@
                                 </td>
                                 <td>
                                     <div class="flex justify-center gap-2">
-                                        <a href="{{ route('master-data.barang.edit', $item) }}" class="btn btn-secondary px-3 py-2">
+                                        <a href="{{ route('master-data.barang.show', $item) }}" class="btn btn-secondary px-3 py-2" title="Lihat Detail">
+                                            <x-ui.icon name="eye" class="h-4 w-4" />
+                                        </a>
+                                        <a href="{{ route('master-data.barang.edit', $item) }}" class="btn btn-secondary px-3 py-2" title="Edit">
                                             <x-ui.icon name="pencil" class="h-4 w-4" />
                                         </a>
                                         <form method="POST" action="{{ route('master-data.barang.destroy', $item) }}" data-confirm="Hapus barang '{{ $item->nama }}'?">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger px-3 py-2">
+                                            <button type="submit" class="btn btn-danger px-3 py-2" title="Hapus">
                                                 <x-ui.icon name="trash" class="h-4 w-4" />
                                             </button>
                                         </form>

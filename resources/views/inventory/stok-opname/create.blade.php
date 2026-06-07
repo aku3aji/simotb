@@ -28,7 +28,7 @@
             <div class="grid gap-6 md:grid-cols-3">
                 <div>
                     <label class="label-text" for="nomor_opname">Nomor Opname</label>
-                    <input id="nomor_opname" name="nomor_opname" type="text" value="{{ old('nomor_opname') }}" class="input-field" placeholder="OPN-20260424-001" required>
+                    <input id="nomor_opname" name="nomor_opname" type="text" value="{{ old('nomor_opname', $nomorOpname) }}" class="input-field" placeholder="OPN-20260424-001" required>
                 </div>
                 <div>
                     <label class="label-text" for="tanggal">Tanggal</label>
@@ -110,7 +110,7 @@
                                 </div>
                                 <div>
                                     <label class="label-text">Selisih</label>
-                                    <input type="text" class="input-field ${selisih === 0 ? 'text-slate-500' : (selisih > 0 ? 'text-emerald-700' : 'text-rose-700')}" value="${barang ? selisih : '-'}" readonly>
+                                    <input type="text" data-row-selisih="${index}" class="input-field ${selisih === 0 ? 'text-slate-500' : (selisih > 0 ? 'text-emerald-700' : 'text-rose-700')}" value="${barang ? selisih : '-'}" readonly>
                                 </div>
                                 <div class="flex items-end">
                                     <button type="button" class="btn btn-danger px-3 py-2" data-row-remove="${index}" ${rows.length === 1 ? 'disabled' : ''}>
@@ -147,7 +147,15 @@
 
                 if (stokIndex !== null) {
                     rows[stokIndex].stok_fisik = event.target.value;
-                    render();
+                    const barang = barangMap[String(rows[stokIndex].barang_id ?? '')];
+                    if (barang) {
+                        const selisih = Number(event.target.value || 0) - Number(barang.stok);
+                        const selisihEl = rowsContainer.querySelector(`[data-row-selisih="${stokIndex}"]`);
+                        if (selisihEl) {
+                            selisihEl.value = selisih;
+                            selisihEl.className = `input-field ${selisih === 0 ? 'text-slate-500' : (selisih > 0 ? 'text-emerald-700' : 'text-rose-700')}`;
+                        }
+                    }
                 }
             });
 

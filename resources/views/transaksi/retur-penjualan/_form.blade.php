@@ -29,7 +29,7 @@
         <div class="grid gap-6 lg:grid-cols-3">
             <div>
                 <label class="label-text" for="nomor_retur">Nomor Retur</label>
-                <input id="nomor_retur" name="nomor_retur" type="text" value="{{ old('nomor_retur', $returPenjualan->nomor_retur ?? '') }}" class="input-field" placeholder="RTR-20260424-001" required>
+                <input id="nomor_retur" name="nomor_retur" type="text" value="{{ old('nomor_retur', $returPenjualan->nomor_retur ?? $nomorRetur ?? '') }}" class="input-field" placeholder="RTR-20260424-001" required>
             </div>
             <div>
                 <label class="label-text" for="penjualan_id">Transaksi Penjualan</label>
@@ -171,7 +171,7 @@
                                     </div>
                                     <div>
                                         <label class="label-text">Harga Jual</label>
-                                        <input type="number" min="0" step="0.01" name="detail[${index}][harga_jual]" value="${row.harga_jual ?? (selected ? selected.harga_jual : '')}" class="input-field" data-retur-field="harga_jual" data-index="${index}" required>
+                                        <input type="number" min="0" step="500" name="detail[${index}][harga_jual]" value="${row.harga_jual ?? (selected ? selected.harga_jual : '')}" class="input-field" data-retur-field="harga_jual" data-index="${index}" required>
                                     </div>
                                     <div>
                                         <label class="label-text">Kondisi</label>
@@ -189,7 +189,7 @@
                                 <div class="mt-4 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm">
                                     <div class="flex items-center justify-between">
                                         <span class="text-slate-500">Subtotal retur</span>
-                                        <span class="font-semibold text-slate-900">${formatRupiah(subtotal)}</span>
+                                        <span data-retur-subtotal="${index}" class="font-semibold text-slate-900">${formatRupiah(subtotal)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -203,7 +203,15 @@
 
                     if (field && index !== null) {
                         rows[index][field] = event.target.value;
-                        render();
+                        if (field === 'jumlah' || field === 'harga_jual') {
+                            const subtotal = Number(rows[index].jumlah || 0) * Number(rows[index].harga_jual || 0);
+                            const subtotalEl = rowsEl.querySelector(`[data-retur-subtotal="${index}"]`);
+                            if (subtotalEl) {
+                                subtotalEl.textContent = formatRupiah(subtotal);
+                            }
+                            const total = rows.reduce((sum, row) => sum + (Number(row.jumlah || 0) * Number(row.harga_jual || 0)), 0);
+                            totalEl.textContent = formatRupiah(total);
+                        }
                     }
                 });
 
@@ -241,7 +249,17 @@
                 });
 
                 transaksiSelect.addEventListener('change', function () {
-                    rows = [{ barang_id: '', jumlah: 1, harga_jual: '', kondisi_barang: 'baik' }];
+                    const transaksi = selectedTransaksi();
+                    if (transaksi && transaksi.detail.length > 0) {
+                        rows = transaksi.detail.map(item => ({
+                            barang_id: String(item.barang_id),
+                            jumlah: item.jumlah,
+                            harga_jual: item.harga_jual,
+                            kondisi_barang: 'baik',
+                        }));
+                    } else {
+                        rows = [{ barang_id: '', jumlah: 1, harga_jual: '', kondisi_barang: 'baik' }];
+                    }
                     render();
                 });
 

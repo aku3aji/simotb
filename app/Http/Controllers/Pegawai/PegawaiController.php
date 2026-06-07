@@ -17,6 +17,14 @@ class PegawaiController extends Controller
     {
         $q = $request->string('q')->trim()->toString();
         $status = $request->string('status')->trim()->toString();
+        $sortBy = $request->string('sort')->trim()->toString();
+        $sortDir = $request->string('dir')->trim()->toString();
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'asc';
+        $perPage = min(100, max(10, (int) $request->input('per_page', 10)));
+        $allowedSorts = ['nama', 'jabatan', 'tanggal_masuk'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'nama';
+        }
 
         $pegawai = Pegawai::query()
             ->when($q !== '', function ($query) use ($q) {
@@ -25,11 +33,12 @@ class PegawaiController extends Controller
                     ->orWhere('telepon', 'like', '%' . $q . '%');
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->latest()
-            ->paginate(10)
+            ->orderBy($sortBy, $sortDir)
+            ->orderBy('id', $sortDir)
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('pegawai.pegawai.index', compact('pegawai', 'q', 'status'));
+        return view('pegawai.pegawai.index', compact('pegawai', 'q', 'status', 'sortBy', 'sortDir', 'perPage'));
     }
 
     public function create(): View

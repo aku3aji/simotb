@@ -5,7 +5,7 @@
 @section('content')
     <div class="surface mx-auto max-w-[560px] p-8 sm:p-10">
         <h2 class="text-3xl font-extrabold text-slate-900 text-center">Selamat Datang Kembali</h2>
-        <p class="mt-3 text-base text-slate-600 text-center">Silakan masukkan kredensial Anda untuk melanjutkan operasional toko.</p>
+        <p class="mt-3 text-base text-slate-600 text-center">Silakan masukkan username dan password Anda untuk melanjutkan ke operasional toko.</p>
 
         @include('partials.form-errors')
 

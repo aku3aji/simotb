@@ -30,7 +30,7 @@
             </div>
             <div>
                 <label class="label-text" for="jumlah_bayar">Jumlah Bayar</label>
-                <input id="jumlah_bayar" name="jumlah_bayar" type="number" min="0.01" step="0.01" value="{{ old('jumlah_bayar', $pembayaranPiutang->jumlah_bayar ?? 0) }}" class="input-field" required data-piutang-bayar>
+                <input id="jumlah_bayar" name="jumlah_bayar" type="number" min="0.00" step="500" value="{{ old('jumlah_bayar', $pembayaranPiutang->jumlah_bayar ?? 0) }}" class="input-field" required data-piutang-bayar>
             </div>
             <div>
                 <label class="label-text" for="metode_pembayaran">Metode Pembayaran</label>

@@ -20,7 +20,7 @@
                         <x-ui.icon name="building" class="h-9 w-9 text-brand-700" />
                     </div>
                     <h1 class="text-4xl font-extrabold tracking-tight text-brand-700 sm:text-5xl">Sumber Alam Jaya</h1>
-                    <p class="mt-3 text-lg text-slate-700">Sistem Manajemen Operasional Terpadu</p>
+                    <p class="mt-3 text-lg text-slate-700">Sistem Manajemen Operasional</p>
                 </div>
 
                 @include('partials.flash')

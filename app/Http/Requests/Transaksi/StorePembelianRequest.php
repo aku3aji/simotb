@@ -3,14 +3,55 @@
 namespace App\Http\Requests\Transaksi;
 
 use App\Http\Requests\BaseFormRequest;
-use Illuminate\Validation\Rule;
+use App\Models\Barang;
+use App\Models\Vendor;
 
 class StorePembelianRequest extends BaseFormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        // Create vendor baru inline jika dipilih opsi tambah baru
+        if ($this->input('vendor_id') === '__new__') {
+            $nama = trim($this->input('vendor_nama_baru', ''));
+            if ($nama !== '') {
+                $vendor = Vendor::create(['nama' => $nama]);
+                $this->merge(['vendor_id' => (string) $vendor->id]);
+            } else {
+                $this->merge(['vendor_id' => '']);
+            }
+        }
+
+        // Create barang baru inline untuk setiap baris detail yang menggunakan opsi tambah baru
+        $detail = $this->input('detail', []);
+        $changed = false;
+        foreach ($detail as $i => $item) {
+            if (($item['barang_id'] ?? '') === '__new__') {
+                $changed = true;
+                $nama = trim($item['barang_nama_baru'] ?? '');
+                if ($nama !== '') {
+                    $barang = Barang::create([
+                        'kode_barang'  => $this->generateKodeBarang($nama),
+                        'nama'         => $nama,
+                        'harga_beli'   => (float) ($item['harga_beli'] ?? 0),
+                        'harga_jual'   => 0,
+                        'stok'         => 0,
+                        'stok_minimum' => 0,
+                        'is_active'    => true,
+                    ]);
+                    $detail[$i]['barang_id'] = (string) $barang->id;
+                } else {
+                    $detail[$i]['barang_id'] = '';
+                }
+            }
+        }
+        if ($changed) {
+            $this->merge(['detail' => $detail]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'nomor_pembelian' => ['required', 'string', 'max:100', Rule::unique('pembelian', 'nomor_pembelian')],
             'vendor_id' => ['required', 'exists:vendor,id'],
             'tanggal' => ['required', 'date'],
             'catatan' => ['nullable', 'string', 'max:1000'],
@@ -24,7 +65,6 @@ class StorePembelianRequest extends BaseFormRequest
     public function attributes(): array
     {
         return [
-            'nomor_pembelian' => 'nomor pembelian',
             'vendor_id' => 'vendor',
             'tanggal' => 'tanggal pembelian',
             'catatan' => 'catatan',
@@ -33,5 +73,18 @@ class StorePembelianRequest extends BaseFormRequest
             'detail.*.jumlah' => 'jumlah',
             'detail.*.harga_beli' => 'harga beli',
         ];
+    }
+
+    private function generateKodeBarang(string $nama): string
+    {
+        $slug = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $nama), 0, 4));
+        $prefix = 'BRG-' . ($slug ?: 'XX') . '-';
+        $count = Barang::where('kode_barang', 'like', $prefix . '%')->count();
+        $kode = $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        while (Barang::where('kode_barang', $kode)->exists()) {
+            $count++;
+            $kode = $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        }
+        return $kode;
     }
 }

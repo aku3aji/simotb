@@ -1,22 +1,28 @@
 @php
-    $detailItems = old('detail', isset($penjualan)
+    $isEdit = isset($penjualan);
+
+    $detailItems = old('detail', $isEdit
         ? $penjualan->detail->map(fn ($item) => [
-            'barang_id' => $item->barang_id,
-            'jumlah' => $item->jumlah,
-            'harga_jual' => $item->harga_jual,
+            'barang_id'       => $item->barang_id,
+            'jumlah'          => $item->jumlah,
+            'harga_jual'      => $item->harga_jual,
+            'barang_nama_baru' => '',
         ])->values()->all()
-        : [['barang_id' => '', 'jumlah' => 1, 'harga_jual' => '']]
+        : [['barang_id' => '', 'jumlah' => 1, 'harga_jual' => '', 'barang_nama_baru' => '']]
     );
 
     $barangOptions = $barangList->map(fn ($item) => [
-        'id' => $item->id,
-        'kode' => $item->kode_barang,
-        'nama' => $item->nama,
-        'stok' => (int) $item->stok,
+        'id'        => $item->id,
+        'kode'      => $item->kode_barang,
+        'nama'      => $item->nama,
+        'stok'      => (int) $item->stok,
         'harga_jual' => (float) $item->harga_jual,
-        'satuan' => $item->satuan->singkatan ?? $item->satuan->nama ?? '',
-        'merek' => $item->merek->nama ?? 'Tanpa merek',
+        'satuan'    => $item->satuan->singkatan ?? $item->satuan->nama ?? '',
+        'merek'     => $item->merek->nama ?? 'Tanpa merek',
     ])->values();
+
+    $nomorValue = old('nomor_penjualan', $isEdit ? $penjualan->nomor_penjualan : ($nomorPenjualan ?? ''));
+    $pelangganSelected = old('pelanggan_id', $penjualan->pelanggan_id ?? '');
 @endphp
 
 <div class="space-y-6">
@@ -24,20 +30,35 @@
         <div class="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label class="label-text" for="nomor_penjualan">Nomor Penjualan</label>
-                <input id="nomor_penjualan" name="nomor_penjualan" type="text" value="{{ old('nomor_penjualan', $penjualan->nomor_penjualan ?? '') }}" class="input-field" placeholder="TRX-20260424-001" required>
+                <input id="nomor_penjualan" name="nomor_penjualan" type="text"
+                    value="{{ $nomorValue }}"
+                    class="input-field"
+                    required>
+                @if (!$isEdit)
+                    <p class="hint-text mt-1">Diisi otomatis — bisa diubah jika diperlukan.</p>
+                @endif
             </div>
             <div>
                 <label class="label-text" for="tanggal">Tanggal</label>
-                <input id="tanggal" name="tanggal" type="date" value="{{ old('tanggal', isset($penjualan->tanggal) ? $penjualan->tanggal->format('Y-m-d') : now()->format('Y-m-d')) }}" class="input-field" required>
+                <input id="tanggal" name="tanggal" type="date"
+                    value="{{ old('tanggal', isset($penjualan->tanggal) ? $penjualan->tanggal->format('Y-m-d') : now()->format('Y-m-d')) }}"
+                    class="input-field" required>
             </div>
             <div class="xl:col-span-2">
                 <label class="label-text" for="pelanggan_id">Pelanggan</label>
                 <select id="pelanggan_id" name="pelanggan_id" class="select-field">
                     <option value="">Pelanggan Umum</option>
                     @foreach ($pelangganList as $item)
-                        <option value="{{ $item->id }}" @selected(old('pelanggan_id', $penjualan->pelanggan_id ?? '') == $item->id)>{{ $item->nama }}</option>
+                        <option value="{{ $item->id }}" @selected($pelangganSelected == $item->id)>{{ $item->nama }}</option>
                     @endforeach
+                    <option value="__new__" @selected($pelangganSelected === '__new__')>+ Tambah pelanggan baru...</option>
                 </select>
+                <div id="pelangganBaruWrap" class="{{ old('pelanggan_id') === '__new__' ? '' : 'hidden' }} mt-2">
+                    <input type="text" name="pelanggan_nama_baru"
+                        value="{{ old('pelanggan_nama_baru') }}"
+                        class="input-field"
+                        placeholder="Masukkan nama pelanggan baru">
+                </div>
             </div>
         </div>
     </section>
@@ -91,14 +112,32 @@
                 <p class="mt-3 text-4xl font-extrabold text-brand-800" data-penjualan-total>Rp 0</p>
             </div>
 
+            @if ($isEdit && isset($penjualan) && $penjualan->returPenjualan->isNotEmpty())
+                @php $totalReturForm = $penjualan->returPenjualan->sum('total_retur'); @endphp
+                <div class="mt-4 space-y-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm">
+                    <div class="summary-item">
+                        <span class="text-rose-600">Total Retur</span>
+                        <span class="font-semibold text-rose-700">- Rp {{ number_format($totalReturForm, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="text-rose-600">Total Efektif</span>
+                        <span class="font-bold text-rose-800">Rp {{ number_format(max(0, $penjualan->total - $totalReturForm), 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            @endif
+
             <div class="mt-6 space-y-4">
                 <div>
                     <label class="label-text" for="dibayar">Jumlah Dibayar</label>
-                    <input id="dibayar" name="dibayar" type="number" min="0" step="0.01" value="{{ old('dibayar', $penjualan->dibayar ?? 0) }}" class="input-field" data-penjualan-dibayar required>
+                    <input id="dibayar" name="dibayar" type="number" min="0" step="500"
+                        value="{{ old('dibayar', $penjualan->dibayar ?? 0) }}"
+                        class="input-field" data-penjualan-dibayar required>
                 </div>
                 <div data-penjualan-jatuh-tempo-wrap>
                     <label class="label-text" for="jatuh_tempo">Jatuh Tempo</label>
-                    <input id="jatuh_tempo" name="jatuh_tempo" type="date" value="{{ old('jatuh_tempo', isset($penjualan->jatuh_tempo) ? $penjualan->jatuh_tempo->format('Y-m-d') : '') }}" class="input-field" data-penjualan-jatuh-tempo>
+                    <input id="jatuh_tempo" name="jatuh_tempo" type="date"
+                        value="{{ old('jatuh_tempo', isset($penjualan->jatuh_tempo) ? $penjualan->jatuh_tempo->format('Y-m-d') : '') }}"
+                        class="input-field" data-penjualan-jatuh-tempo>
                 </div>
                 <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                     <p class="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">Sisa Piutang</p>
@@ -135,8 +174,14 @@
                 const jatuhTempoWrap = document.querySelector('[data-penjualan-jatuh-tempo-wrap]');
                 const jatuhTempoInput = document.querySelector('[data-penjualan-jatuh-tempo]');
 
-                const formatRupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+                // Pelanggan inline
+                const pelangganSelect = document.getElementById('pelanggan_id');
+                const pelangganBaruWrap = document.getElementById('pelangganBaruWrap');
+                pelangganSelect?.addEventListener('change', function () {
+                    pelangganBaruWrap.classList.toggle('hidden', this.value !== '__new__');
+                });
 
+                const formatRupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
                 const currentType = () => document.querySelector('input[name="tipe_pembayaran"]:checked')?.value || 'tunai';
 
                 const syncSummary = () => {
@@ -164,10 +209,31 @@
 
                 const render = () => {
                     rowsEl.innerHTML = rows.map((row, index) => {
-                        const selected = barangOptions.find(item => String(item.id) === String(row.barang_id ?? ''));
+                        const isNew = String(row.barang_id ?? '') === '__new__';
+                        const selected = isNew ? null : barangOptions.find(item => String(item.id) === String(row.barang_id ?? ''));
                         const jumlah = Number(row.jumlah || 0);
                         const harga = Number(row.harga_jual || (selected ? selected.harga_jual : 0));
                         const subtotal = jumlah * harga;
+
+                        const barangSelectOptions = barangOptions.map(item => `
+                            <option value="${item.id}" ${String(row.barang_id ?? '') === String(item.id) ? 'selected' : ''}>
+                                ${item.nama} (${item.kode})
+                            </option>
+                        `).join('') + `<option value="__new__" ${isNew ? 'selected' : ''}>+ Tambah barang baru...</option>`;
+
+                        const barangNamaBaruInput = isNew ? `
+                            <input type="text"
+                                name="detail[${index}][barang_nama_baru]"
+                                value="${(row.barang_nama_baru || '').replace(/"/g, '&quot;')}"
+                                class="input-field mt-2"
+                                placeholder="Nama barang baru"
+                                data-penjualan-field="barang_nama_baru"
+                                data-index="${index}">
+                        ` : `<input type="hidden" name="detail[${index}][barang_nama_baru]" value="">`;
+
+                        const hintText = isNew
+                            ? '<p class="hint-text text-amber-600">Isi nama barang baru, harga jual wajib diisi manual.</p>'
+                            : `<p class="hint-text">${selected ? `${selected.merek} • Stok ${selected.stok} ${selected.satuan}` : 'Pilih barang untuk melihat stok tersedia.'}</p>`;
 
                         return `
                             <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
@@ -176,13 +242,10 @@
                                         <label class="label-text">Barang</label>
                                         <select name="detail[${index}][barang_id]" class="select-field" data-penjualan-field="barang_id" data-index="${index}" required>
                                             <option value="">Pilih barang</option>
-                                            ${barangOptions.map(item => `
-                                                <option value="${item.id}" ${String(row.barang_id ?? '') === String(item.id) ? 'selected' : ''}>
-                                                    ${item.nama} (${item.kode})
-                                                </option>
-                                            `).join('')}
+                                            ${barangSelectOptions}
                                         </select>
-                                        <p class="hint-text">${selected ? `${selected.merek} • Stok ${selected.stok} ${selected.satuan}` : 'Pilih barang untuk melihat stok tersedia.'}</p>
+                                        ${barangNamaBaruInput}
+                                        ${hintText}
                                     </div>
                                     <div>
                                         <label class="label-text">Qty</label>
@@ -190,7 +253,7 @@
                                     </div>
                                     <div>
                                         <label class="label-text">Harga Jual</label>
-                                        <input type="number" min="0.01" step="0.01" name="detail[${index}][harga_jual]" value="${row.harga_jual ?? (selected ? selected.harga_jual : '')}" class="input-field" data-penjualan-field="harga_jual" data-index="${index}" required>
+                                        <input type="number" min="0.00" step="500" name="detail[${index}][harga_jual]" value="${row.harga_jual ?? (selected ? selected.harga_jual : '')}" class="input-field" data-penjualan-field="harga_jual" data-index="${index}" required>
                                     </div>
                                     <div>
                                         <label class="label-text">Subtotal</label>
@@ -219,8 +282,8 @@
                         if (field === 'jumlah' || field === 'harga_jual') {
                             const row = rows[index];
                             const subtotal = Number(row.jumlah || 0) * Number(row.harga_jual || 0);
-                            const subtotalEl = rowsEl.querySelector(`[data-penjualan-row-subtotal="${index}"]`);
-                            if (subtotalEl) subtotalEl.value = formatRupiah(subtotal);
+                            const el = rowsEl.querySelector(`[data-penjualan-row-subtotal="${index}"]`);
+                            if (el) el.value = formatRupiah(subtotal);
                         }
 
                         syncSummary();
@@ -235,9 +298,13 @@
                         rows[index][field] = event.target.value;
 
                         if (field === 'barang_id') {
-                            const selected = barangOptions.find(item => String(item.id) === String(event.target.value));
-                            if (selected) {
-                                rows[index].harga_jual = selected.harga_jual;
+                            if (event.target.value === '__new__') {
+                                rows[index].harga_jual = '';
+                                rows[index].barang_nama_baru = '';
+                            } else {
+                                const selected = barangOptions.find(item => String(item.id) === String(event.target.value));
+                                if (selected) rows[index].harga_jual = selected.harga_jual;
+                                rows[index].barang_nama_baru = '';
                             }
                             render();
                             return;
@@ -249,16 +316,13 @@
 
                 rowsEl.addEventListener('click', function (event) {
                     const button = event.target.closest('[data-penjualan-remove]');
-                    if (!button) {
-                        return;
-                    }
-
+                    if (!button) return;
                     rows.splice(Number(button.getAttribute('data-penjualan-remove')), 1);
                     render();
                 });
 
                 addButton.addEventListener('click', function () {
-                    rows.push({ barang_id: '', jumlah: 1, harga_jual: '' });
+                    rows.push({ barang_id: '', jumlah: 1, harga_jual: '', barang_nama_baru: '' });
                     render();
                 });
 

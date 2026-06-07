@@ -38,11 +38,11 @@
             </div>
             <div>
                 <label class="label-text" for="harga_beli">Harga Beli</label>
-                <input id="harga_beli" name="harga_beli" type="number" min="0" step="0.01" value="{{ old('harga_beli', $barang->harga_beli ?? 0) }}" class="input-field" required>
+                <input id="harga_beli" name="harga_beli" type="number" min="0" step="500" value="{{ old('harga_beli', $barang->harga_beli ?? 0) }}" class="input-field" required>
             </div>
             <div>
                 <label class="label-text" for="harga_jual">Harga Jual</label>
-                <input id="harga_jual" name="harga_jual" type="number" min="0" step="0.01" value="{{ old('harga_jual', $barang->harga_jual ?? 0) }}" class="input-field" required>
+                <input id="harga_jual" name="harga_jual" type="number" min="0" step="500" value="{{ old('harga_jual', $barang->harga_jual ?? 0) }}" class="input-field" required>
             </div>
             <div>
                 <label class="label-text" for="stok">Stok Saat Ini</label>
