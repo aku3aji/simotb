@@ -1,66 +1,122 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIMOTB - Sistem Informasi Manajemen Operasional Toko Bahan Bangunan
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <strong>Sistem Informasi Manajemen Operasional Toko Bahan Bangunan Berbasis Website</strong><br>
+  <em>Studi Kasus: Toko Bangunan Sumber Alam Jaya</em>
 </p>
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📋 Tentang Proyek
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**SIMOTB** adalah sistem informasi berbasis web yang dirancang khusus untuk mengelola operasional toko bahan bangunan. Aplikasi ini membantu pemilik dan karyawan toko dalam mengelola inventori, penjualan, pembelian, dan laporan keuangan secara terintegrasi dan efisien.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Proyek ini dikembangkan sebagai studi kasus untuk **Toko Bangunan Sumber Alam Jaya** dengan tujuan meningkatkan efisiensi operasional dan manajemen data toko.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## ✨ Fitur Utama
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- 📦 **Manajemen Inventori** - Kelola stok barang, kategori produk, dan harga
+- 🛒 **Sistem Penjualan** - Proses penjualan, keranjang belanja, dan invoice
+- 📥 **Manajemen Pembelian** - Kelola pembelian dari supplier dan pesanan
+- 💰 **Laporan Keuangan** - Dashboard keuangan, laporan penjualan, dan profit/loss
+- 👥 **Manajemen User** - Role-based access control (Admin, Penjual, Kasir)
+- 📊 **Dashboard & Analytics** - Visualisasi data penjualan dan statistik bisnis
+- 🧾 **Export & Print** - Export laporan ke PDF dan Excel
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 🛠️ Tech Stack
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Komponen | Teknologi |
+|----------|-----------|
+| **Backend Framework** | Laravel 10.x |
+| **Frontend Templating** | Blade Templates |
+| **Database** | MySQL / MariaDB |
+| **PHP Version** | ^8.1 |
+| **Dependencies** |  |
+| | • Laravel Sanctum (Autentikasi) |
+| | • Maatwebsite Excel (Export Excel) |
+| | • Laravel DomPDF (Export PDF) |
+| | • Guzzle HTTP (HTTP Client) |
 
-### Premium Partners
+**Language Composition:**
+- Blade: 52%
+- PHP: 47%
+- Other: 1%
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+---
 
-## Contributing
+## 💻 Cara Penggunaan
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Login
+- Buka aplikasi di browser
+- Masukkan username dan password sesuai role Anda
+- Pilih role: Admin, Penjual, atau Kasir
 
-## Code of Conduct
+### Menu Utama
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+#### Admin
+- Dashboard - Melihat overview bisnis
+- Manajemen Barang - Tambah/edit/hapus produk
+- Manajemen Kategori - Kelola kategori barang
+- Laporan - Lihat laporan penjualan, keuangan, dan stok
+- Manajemen User - Tambah/edit pengguna sistem
 
-## Security Vulnerabilities
+#### Penjual/Kasir
+- Dashboard - Ringkasan transaksi harian
+- Penjualan - Proses penjualan baru
+- Riwayat Penjualan - Lihat history transaksi
+- Laporan - Laporan harian/mingguan
+- Profil - Manage akun pengguna
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 📁 Struktur Proyek
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```
+simotb/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/     # Controller aplikasi
+│   │   └── Middleware/      # Middleware custom
+│   ├── Models/              # Eloquent Models
+│   └── ...
+├── database/
+│   ├── migrations/          # Database migrations
+│   ├── seeders/             # Database seeders
+│   └── factories/           # Model factories
+├── resources/
+│   ├── views/               # Blade templates
+│   ├── css/                 # Stylesheet
+│   └── js/                  # JavaScript files
+├── routes/
+│   ├── web.php              # Web routes
+│   └── api.php              # API routes (jika ada)
+├── public/
+│   ├── css/                 # Compiled CSS
+│   ├── js/                  # Compiled JS
+│   └── images/              # Gambar & aset
+├── storage/                 # File uploads & logs
+├── tests/                   # Unit & Feature tests
+├── config/                  # Konfigurasi aplikasi
+├── .env.example             # Environment template
+└── composer.json            # Project dependencies
+```
+
+---
+
+## 👤 Kontributor / Author
+
+| Nama | Role | Kontak |
+|------|------|--------|
+| **aku3aji** | Developer | [@aku3aji](https://github.com/aku3aji) |
+
+---
+
+## 📄 License
+
+Proyek ini dilisensikan di bawah [MIT License](LICENSE).
+
+---
