@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Pegawai;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -12,11 +14,30 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        $this->call(MasterDataSeeder::class);
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        User::updateOrCreate(
+            ['email' => 'owner@example.com'],
+            [
+                'name' => 'Owner',
+                'role' => User::ROLE_OWNER,
+                'pegawai_id' => Pegawai::where('nama', 'Owner Sumber Alam')->firstOrFail()->id,
+                'is_active' => true,
+                'password' => 'password',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin',
+                'role' => User::ROLE_ADMIN,
+                'pegawai_id' => Pegawai::where('nama', 'Admin Kasir')->firstOrFail()->id,
+                'is_active' => true,
+                'password' => 'password',
+            ]
+        );
+
+        $this->call(TransactionSeeder::class);
     }
 }

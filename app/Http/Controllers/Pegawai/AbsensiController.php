@@ -1,0 +1,156 @@
+<?php
+
+namespace App\Http\Controllers\Pegawai;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Pegawai\StoreAbsensiRequest;
+use App\Http\Requests\Pegawai\UpdateAbsensiRequest;
+use App\Models\Absensi;
+use App\Models\Pegawai;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class AbsensiController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $q = $request->string('q')->trim()->toString();
+        $status = $request->string('status')->trim()->toString();
+        $tanggal = $request->string('tanggal')->trim()->toString();
+
+        $absensi = Absensi::query()
+            ->with(['pegawai', 'user'])
+            ->when($q !== '', function ($query) use ($q) {
+                $query->whereHas('pegawai', fn ($pegawai) => $pegawai->where('nama', 'like', '%' . $q . '%'));
+            })
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($tanggal !== '', fn ($query) => $query->whereDate('tanggal', $tanggal))
+            ->latest('tanggal')
+            ->latest('id')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('pegawai.absensi.index', compact('absensi', 'q', 'status', 'tanggal'));
+    }
+
+    public function create(): View
+    {
+        return view('pegawai.absensi.create', [
+            'pegawaiList' => Pegawai::query()
+                ->where('status', Pegawai::STATUS_AKTIF)
+                ->orderBy('nama')
+                ->get(),
+        ]);
+    }
+
+    public function store(StoreAbsensiRequest $request): RedirectResponse
+    {
+        Absensi::create($request->validated() + [
+            'user_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('pegawai.absensi.index')
+            ->with('success', 'Data absensi berhasil ditambahkan.');
+    }
+
+    public function edit(Absensi $absensi): View
+    {
+        return view('pegawai.absensi.edit', [
+            'absensi' => $absensi,
+            'pegawaiList' => Pegawai::query()
+                ->where('status', Pegawai::STATUS_AKTIF)
+                ->orWhere('id', $absensi->pegawai_id)
+                ->orderBy('nama')
+                ->get(),
+        ]);
+    }
+
+    public function update(UpdateAbsensiRequest $request, Absensi $absensi): RedirectResponse
+    {
+        $absensi->update($request->validated() + [
+            'user_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('pegawai.absensi.index')
+            ->with('success', 'Data absensi berhasil diperbarui.');
+    }
+
+    public function cataMassal(): View
+    {
+        return view('pegawai.absensi.catat-massal', [
+            'pegawaiList' => Pegawai::query()
+                ->where('status', Pegawai::STATUS_AKTIF)
+                ->orderBy('nama')
+                ->get(),
+            'tanggal' => now()->format('Y-m-d'),
+        ]);
+    }
+
+    public function storeMassal(Request $request): RedirectResponse
+    {
+        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+        $rows    = $request->input('absensi', []);
+        $userId  = auth()->id();
+        $saved   = 0;
+        $skipped = 0;
+
+        $validStatus = [Absensi::STATUS_HADIR, Absensi::STATUS_IZIN, Absensi::STATUS_SAKIT, Absensi::STATUS_ALPHA];
+
+        foreach ($rows as $pegawaiId => $data) {
+            $pegawaiId = (int) $pegawaiId;
+            if ($pegawaiId <= 0) {
+                continue;
+            }
+
+            $sudahAda = Absensi::where('pegawai_id', $pegawaiId)->whereDate('tanggal', $tanggal)->exists();
+            if ($sudahAda) {
+                $skipped++;
+                continue;
+            }
+
+            $status = in_array($data['status'] ?? '', $validStatus) ? $data['status'] : Absensi::STATUS_HADIR;
+            $isHadir = $status === Absensi::STATUS_HADIR;
+
+            Absensi::create([
+                'pegawai_id' => $pegawaiId,
+                'tanggal'    => $tanggal,
+                'status'     => $status,
+                'jam_masuk'  => $isHadir ? ($data['jam_masuk'] ?: null) : null,
+                'jam_keluar' => $isHadir ? ($data['jam_keluar'] ?: null) : null,
+                'keterangan' => $data['keterangan'] ?? null,
+                'user_id'    => $userId,
+            ]);
+            $saved++;
+        }
+
+        $pesan = "Berhasil menyimpan {$saved} data absensi.";
+        if ($skipped > 0) {
+            $pesan .= " {$skipped} pegawai dilewati karena sudah ada absensi untuk tanggal ini.";
+        }
+
+        return redirect()->route('pegawai.absensi.index')->with('success', $pesan);
+    }
+
+    public function destroy(Absensi $absensi): RedirectResponse
+    {
+        $absensi->delete();
+
+        return redirect()->route('pegawai.absensi.index')
+            ->with('success', 'Data absensi berhasil dihapus.');
+    }
+
+    public function destroyBulk(Request $request): RedirectResponse
+    {
+        $ids = array_filter(array_map('intval', (array) $request->input('ids', [])), fn ($id) => $id > 0);
+
+        if (empty($ids)) {
+            return back()->with('error', 'Tidak ada data yang dipilih.');
+        }
+
+        $jumlah = Absensi::whereIn('id', $ids)->delete();
+
+        return redirect()->route('pegawai.absensi.index')
+            ->with('success', $jumlah . ' data absensi berhasil dihapus.');
+    }
+}

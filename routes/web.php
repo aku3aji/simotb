@@ -1,18 +1,111 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Inventory\StokOpnameController;
+use App\Http\Controllers\Laporan\LaporanController;
+use App\Http\Controllers\MasterData\BarangController;
+use App\Http\Controllers\MasterData\KategoriController;
+use App\Http\Controllers\MasterData\MerekController;
+use App\Http\Controllers\MasterData\PelangganController;
+use App\Http\Controllers\MasterData\SatuanController;
+use App\Http\Controllers\MasterData\VendorController;
+use App\Http\Controllers\Pegawai\AbsensiController;
+use App\Http\Controllers\Pegawai\PegawaiController;
+use App\Http\Controllers\Pengguna\UserController;
+use App\Http\Controllers\Transaksi\PembayaranPiutangController;
+use App\Http\Controllers\Transaksi\PembelianController;
+use App\Http\Controllers\Transaksi\PenjualanController;
+use App\Http\Controllers\Transaksi\ReturPenjualanController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
-
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])
+        ->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
+        ->name('login.store');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+        ->name('logout');
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    Route::prefix('master-data')
+        ->as('master-data.')
+        ->group(function () {
+            Route::delete('kategori/bulk-destroy', [KategoriController::class, 'destroyBulk'])->name('kategori.bulk-destroy');
+            Route::resource('kategori', KategoriController::class)->except(['show']);
+            Route::delete('satuan/bulk-destroy', [SatuanController::class, 'destroyBulk'])->name('satuan.bulk-destroy');
+            Route::resource('satuan', SatuanController::class)->except(['show']);
+            Route::delete('merek/bulk-destroy', [MerekController::class, 'destroyBulk'])->name('merek.bulk-destroy');
+            Route::resource('merek', MerekController::class)->except(['show']);
+            Route::delete('vendor/bulk-destroy', [VendorController::class, 'destroyBulk'])->name('vendor.bulk-destroy');
+            Route::resource('vendor', VendorController::class)->except(['show']);
+            Route::delete('pelanggan/bulk-destroy', [PelangganController::class, 'destroyBulk'])->name('pelanggan.bulk-destroy');
+            Route::resource('pelanggan', PelangganController::class)->except(['show']);
+            Route::delete('barang/bulk-destroy', [BarangController::class, 'destroyBulk'])->name('barang.bulk-destroy');
+            Route::resource('barang', BarangController::class)->except(['show']);
+        });
+
+    Route::prefix('inventory')
+        ->as('inventory.')
+        ->group(function () {
+            Route::resource('stok-opname', StokOpnameController::class)
+                ->only(['index', 'create', 'store']);
+        });
+
+    Route::prefix('transaksi')
+        ->as('transaksi.')
+        ->group(function () {
+            Route::resource('pembelian', PembelianController::class)
+                ->only(['index', 'create', 'store', 'edit', 'update']);
+
+            Route::resource('penjualan', PenjualanController::class)
+                ->only(['index', 'create', 'store', 'edit', 'update']);
+
+            Route::delete('pembayaran-piutang/bulk-destroy', [PembayaranPiutangController::class, 'destroyBulk'])->name('pembayaran-piutang.bulk-destroy');
+            Route::resource('pembayaran-piutang', PembayaranPiutangController::class)
+                ->except(['show']);
+
+            Route::resource('retur-penjualan', ReturPenjualanController::class)
+                ->only(['index', 'create', 'store', 'edit', 'update']);
+        });
+
+    Route::prefix('pegawai')
+        ->as('pegawai.')
+        ->group(function () {
+            Route::delete('pegawai/bulk-destroy', [PegawaiController::class, 'destroyBulk'])->name('pegawai.bulk-destroy');
+            Route::resource('pegawai', PegawaiController::class)->except(['show']);
+            Route::get('absensi/catat-massal', [AbsensiController::class, 'cataMassal'])->name('absensi.catat-massal');
+            Route::post('absensi/catat-massal', [AbsensiController::class, 'storeMassal'])->name('absensi.store-massal');
+            Route::delete('absensi/bulk-destroy', [AbsensiController::class, 'destroyBulk'])->name('absensi.bulk-destroy');
+            Route::resource('absensi', AbsensiController::class)->except(['show']);
+        });
+
+    Route::middleware('owner')
+        ->prefix('pengguna')
+        ->as('pengguna.')
+        ->group(function () {
+            Route::delete('user/bulk-destroy', [UserController::class, 'destroyBulk'])->name('user.bulk-destroy');
+            Route::resource('user', UserController::class)->except(['show']);
+        });
+
+    Route::prefix('laporan')
+        ->as('laporan.')
+        ->group(function () {
+            Route::get('stok', [LaporanController::class, 'stok'])->name('stok');
+            Route::get('pembelian', [LaporanController::class, 'pembelian'])->name('pembelian');
+            Route::get('penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
+            Route::get('piutang', [LaporanController::class, 'piutang'])->name('piutang');
+            Route::get('absensi', [LaporanController::class, 'absensi'])->name('absensi');
+        });
 });
