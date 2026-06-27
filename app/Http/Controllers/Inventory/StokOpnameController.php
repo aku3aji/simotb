@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Concerns\InteractsWithStok;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreStokOpnameRequest;
-use App\Http\Requests\Inventory\UpdateStokOpnameRequest;
 use App\Models\Barang;
 use App\Models\StokMutasi;
 use App\Models\StokOpname;
@@ -35,7 +34,7 @@ class StokOpnameController extends Controller
             ->with(['user'])
             ->withCount('detail')
             ->when($q !== '', fn ($query) => $query->where('nomor_opname', 'like', '%' . $q . '%'))
-            ->when($tanggal !== '', fn ($query) => $query->whereDate('tanggal', $tanggal))
+            ->when($tanggal !== '', fn ($query) => $query->where('tanggal', $tanggal))
             ->orderBy($sortBy, $sortDir)
             ->orderBy('id', $sortDir)
             ->paginate($perPage)
@@ -61,15 +60,22 @@ class StokOpnameController extends Controller
         $validated = $request->validated();
         $userId = (int) auth()->id();
 
-        DB::transaction(function () use ($validated, $userId) {
+        // Hanya proses baris yang stok_fisik-nya diisi
+        $detailDiisi = collect($validated['detail'])->filter(fn ($item) => $item['stok_fisik'] !== null && $item['stok_fisik'] !== '')->values();
+
+        if ($detailDiisi->isEmpty()) {
+            return back()->withInput()->with('error', 'Minimal satu barang harus diisi stok fisiknya.');
+        }
+
+        DB::transaction(function () use ($validated, $detailDiisi, $userId) {
             $stokOpname = StokOpname::create([
-                'nomor_opname' => $validated['nomor_opname'],
+                'nomor_opname' => $this->generateNomor(),
                 'tanggal' => $validated['tanggal'],
                 'catatan' => $validated['catatan'] ?? null,
                 'user_id' => $userId,
             ]);
 
-            $barangIds = collect($validated['detail'])->pluck('barang_id')->unique()->sort()->values();
+            $barangIds = $detailDiisi->pluck('barang_id')->unique()->sort()->values();
 
             $barangMap = Barang::query()
                 ->whereIn('id', $barangIds)
@@ -78,7 +84,7 @@ class StokOpnameController extends Controller
                 ->get()
                 ->keyBy('id');
 
-            foreach ($validated['detail'] as $item) {
+            foreach ($detailDiisi as $item) {
                 $barang = $barangMap->get($item['barang_id']);
 
                 $stokSistem = (int) $barang->stok;
@@ -125,14 +131,12 @@ class StokOpnameController extends Controller
 
     public function edit(StokOpname $stokOpname): RedirectResponse
     {
-        unset($stokOpname);
         return redirect()->route('inventory.stok-opname.index')
             ->with('error', 'Data stock opname yang sudah disimpan tidak dapat diubah.');
     }
 
     public function destroy(StokOpname $stokOpname): RedirectResponse
     {
-        unset($stokOpname);
         return redirect()->route('inventory.stok-opname.index')
             ->with('error', 'Data stock opname yang sudah disimpan tidak dapat dihapus.');
     }
@@ -140,10 +144,12 @@ class StokOpnameController extends Controller
     private function generateNomor(): string
     {
         $prefix = 'OPN-' . now()->format('Ymd') . '-';
-        $count = StokOpname::query()
+        $last = StokOpname::query()
             ->where('nomor_opname', 'like', $prefix . '%')
+            ->orderByDesc('nomor_opname')
             ->lockForUpdate()
-            ->count();
-        return $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+            ->value('nomor_opname');
+        $next = $last ? ((int) substr($last, strlen($prefix)) + 1) : 1;
+        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 }

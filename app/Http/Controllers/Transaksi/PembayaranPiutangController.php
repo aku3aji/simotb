@@ -39,8 +39,8 @@ class PembayaranPiutangController extends Controller
                         ->orWhereHas('pelanggan', fn ($p) => $p->where('nama', 'like', '%' . $q . '%'));
                 });
             })
-            ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($query) => $query->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($query) => $query->where('tanggal', '<=', $tanggalSelesai))
             ->latest('tanggal')
             ->latest('id')
             ->get();
@@ -55,8 +55,8 @@ class PembayaranPiutangController extends Controller
                         ->orWhereHas('pelanggan', fn ($p) => $p->where('nama', 'like', '%' . $q . '%'));
                 });
             })
-            ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($query) => $query->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($query) => $query->where('tanggal', '<=', $tanggalSelesai))
             ->orderBy($sortBy, $sortDir)
             ->orderBy('id', $sortDir)
             ->paginate($perPage)
@@ -73,6 +73,13 @@ class PembayaranPiutangController extends Controller
             'sortDir',
             'perPage'
         ));
+    }
+
+    public function show(Penjualan $penjualan): View
+    {
+        $penjualan->load(['pelanggan', 'pembayaranPiutang.user']);
+
+        return view('transaksi.pembayaran-piutang.show', compact('penjualan'));
     }
 
     public function create(Request $request): View
@@ -196,8 +203,13 @@ class PembayaranPiutangController extends Controller
 
             PembayaranPiutang::whereIn('id', $ids)->delete();
 
-            Penjualan::whereIn('id', $penjualanIds)->each(function ($penjualan) {
-                $dibayar = (float) PembayaranPiutang::where('penjualan_id', $penjualan->id)->sum('jumlah_bayar');
+            $dibayarMap = PembayaranPiutang::whereIn('penjualan_id', $penjualanIds)
+                ->selectRaw('penjualan_id, SUM(jumlah_bayar) as total')
+                ->groupBy('penjualan_id')
+                ->pluck('total', 'penjualan_id');
+
+            Penjualan::whereIn('id', $penjualanIds)->each(function ($penjualan) use ($dibayarMap) {
+                $dibayar = (float) ($dibayarMap->get($penjualan->id) ?? 0);
                 $this->syncPaymentSummary($penjualan, $dibayar);
             });
         });

@@ -34,7 +34,7 @@ class AbsensiController extends Controller
                 $query->whereHas('pegawai', fn ($pegawai) => $pegawai->where('nama', 'like', '%' . $q . '%'));
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($tanggal !== '', fn ($query) => $query->whereDate('tanggal', $tanggal))
+            ->when($tanggal !== '', fn ($query) => $query->where('tanggal', $tanggal))
             ->orderBy($sortBy, $sortDir)
             ->orderBy('id', $sortDir)
             ->paginate($perPage)
@@ -113,7 +113,7 @@ class AbsensiController extends Controller
                     continue;
                 }
 
-                $sudahAda = Absensi::where('pegawai_id', $pegawaiId)->whereDate('tanggal', $tanggal)->exists();
+                $sudahAda = Absensi::where('pegawai_id', $pegawaiId)->where('tanggal', $tanggal)->exists();
                 if ($sudahAda) {
                     $skipped++;
                     continue;

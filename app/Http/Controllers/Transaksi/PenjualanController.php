@@ -39,7 +39,7 @@ class PenjualanController extends Controller
         }
 
         $statHariIni = Penjualan::query()
-            ->whereDate('tanggal', now()->toDateString())
+            ->where('tanggal', now()->toDateString())
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
             ->first();
 
@@ -60,8 +60,8 @@ class PenjualanController extends Controller
             })
             ->when($tipePembayaran !== '', fn ($query) => $query->where('tipe_pembayaran', $tipePembayaran))
             ->when($statusPembayaran !== '', fn ($query) => $query->where('status_pembayaran', $statusPembayaran))
-            ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($query) => $query->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($query) => $query->where('tanggal', '<=', $tanggalSelesai))
             ->orderBy($sortBy, $sortDir)
             ->orderBy('id', $sortDir)
             ->paginate($perPage)
@@ -304,11 +304,13 @@ class PenjualanController extends Controller
     private function generateNomor(): string
     {
         $prefix = 'PJL-' . now()->format('Ymd') . '-';
-        $count = Penjualan::query()
+        $last = Penjualan::query()
             ->where('nomor_penjualan', 'like', $prefix . '%')
+            ->orderByDesc('nomor_penjualan')
             ->lockForUpdate()
-            ->count();
-        return $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+            ->value('nomor_penjualan');
+        $next = $last ? ((int) substr($last, strlen($prefix)) + 1) : 1;
+        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     private function formData(): array

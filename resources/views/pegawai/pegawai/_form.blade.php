@@ -19,7 +19,7 @@
             </div>
             <div>
                 <label class="label-text" for="gaji_harian">Gaji Harian (Rp)</label>
-                <input id="gaji_harian" name="gaji_harian" type="number" min="0" step="1"
+                <input id="gaji_harian" name="gaji_harian" type="number" min="0" step="500"
                     value="{{ old('gaji_harian', $pegawai->gaji_harian ?? '') }}"
                     class="input-field" placeholder="0">
                 @error('gaji_harian')

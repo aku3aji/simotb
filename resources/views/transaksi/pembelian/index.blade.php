@@ -6,7 +6,7 @@
     <x-ui.page-header title="Transaksi Pembelian" description="Catat barang masuk dari vendor dan pantau total pembelian per periode.">
         <a href="{{ route('transaksi.pembelian.create') }}" class="btn btn-primary">
             <x-ui.icon name="plus" class="h-4 w-4" />
-            <span>Input Pembelian</span>
+            <span>Buat Pembelian</span>
         </a>
     </x-ui.page-header>
 

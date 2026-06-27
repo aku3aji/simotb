@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class ProfilController extends Controller
@@ -27,7 +26,7 @@ class ProfilController extends Controller
         $user->name = $validated['name'];
 
         if (!empty($validated['password'])) {
-            $user->password = Hash::make($validated['password']);
+            $user->password = $validated['password'];
         }
 
         $user->save();

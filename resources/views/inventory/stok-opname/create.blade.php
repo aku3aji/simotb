@@ -4,18 +4,20 @@
 
 @section('content')
     @php
-        $detailItems = old('detail', [['barang_id' => '', 'stok_fisik' => '', 'alasan' => '']]);
         $barangOptions = $barangList->map(fn ($item) => [
-            'id' => $item->id,
-            'kode' => $item->kode_barang,
-            'nama' => $item->nama,
-            'stok' => (int) $item->stok,
+            'id'       => $item->id,
+            'kode'     => $item->kode_barang,
+            'nama'     => $item->nama,
+            'stok'     => (int) $item->stok,
             'kategori' => $item->kategori->nama ?? '-',
-            'satuan' => $item->satuan->singkatan ?? $item->satuan->nama ?? '',
+            'satuan'   => $item->satuan->singkatan ?? $item->satuan->nama ?? '',
         ])->values();
+
+        // Restore old values per barang_id after validation fail
+        $oldDetail = collect(old('detail', []))->keyBy('barang_id');
     @endphp
 
-    <x-ui.page-header title="Buat Stock Opname" description="Input hasil hitung fisik dan catat selisih stok secara jelas.">
+    <x-ui.page-header title="Buat Stock Opname" description="Isi stok fisik untuk barang yang diopname. Barang yang dikosongkan dianggap tidak ada penyesuaian.">
         <a href="{{ route('inventory.stok-opname.index') }}" class="btn btn-secondary">Kembali</a>
     </x-ui.page-header>
 
@@ -28,7 +30,8 @@
             <div class="grid gap-6 md:grid-cols-3">
                 <div>
                     <label class="label-text" for="nomor_opname">Nomor Opname</label>
-                    <input id="nomor_opname" name="nomor_opname" type="text" value="{{ old('nomor_opname', $nomorOpname) }}" class="input-field" placeholder="OPN-20260424-001" required>
+                    <input id="nomor_opname" name="nomor_opname" type="text" value="{{ old('nomor_opname', $nomorOpname) }}" class="input-field bg-slate-100" readonly placeholder="OPN-20260424-001" required>
+                    <p class="hint-text mt-1">Nomor dibuat otomatis oleh sistem.</p>
                 </div>
                 <div>
                     <label class="label-text" for="tanggal">Tanggal</label>
@@ -44,16 +47,80 @@
         <section class="surface overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-900">Detail Barang</h2>
-                    <p class="mt-1 text-sm text-slate-500">Pilih barang yang dicek, isi stok fisik, lalu jelaskan selisih jika ada.</p>
+                    <h2 class="text-lg font-bold text-slate-900">Daftar Barang</h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Isi kolom <span class="font-semibold text-slate-700">Stok Fisik</span> untuk barang yang dihitung.
+                        Baris yang dikosongkan tidak akan diproses.
+                    </p>
                 </div>
-                <button type="button" class="btn btn-secondary" data-opname-add>
-                    <x-ui.icon name="plus" class="h-4 w-4" />
-                    <span>Tambah Baris</span>
-                </button>
+                <div class="relative">
+                    <x-ui.icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input type="text" id="opname-search" class="input-field pl-9 w-56" placeholder="Cari nama barang...">
+                </div>
             </div>
 
-            <div class="space-y-4 px-5 py-5" data-opname-rows></div>
+            <div class="overflow-x-auto">
+                <table class="data-table" id="opname-table">
+                    <thead>
+                        <tr>
+                            <th>Nama Barang</th>
+                            <th>Kategori</th>
+                            <th class="!text-right w-32">Stok Sistem</th>
+                            <th class="w-40">Stok Fisik</th>
+                            <th class="!text-right w-32">Selisih</th>
+                            <th class="w-56">Alasan Selisih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($barangOptions as $index => $barang)
+                            @php
+                                $oldRow    = $oldDetail->get($barang['id']);
+                                $stokFisik = $oldRow['stok_fisik'] ?? '';
+                                $alasan    = $oldRow['alasan'] ?? '';
+                            @endphp
+                            <tr data-barang-row data-nama="{{ strtolower($barang['nama']) }}">
+                                <td>
+                                    <input type="hidden" name="detail[{{ $index }}][barang_id]" value="{{ $barang['id'] }}">
+                                    <div class="font-semibold text-slate-900">{{ $barang['nama'] }}</div>
+                                    <div class="text-xs text-slate-400">{{ $barang['kode'] }}</div>
+                                </td>
+                                <td class="text-slate-500">{{ $barang['kategori'] }}</td>
+                                <td class="text-right font-mono text-slate-700">
+                                    {{ $barang['stok'] }} <span class="text-xs text-slate-400">{{ $barang['satuan'] }}</span>
+                                </td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="detail[{{ $index }}][stok_fisik]"
+                                        min="0"
+                                        step="1"
+                                        value="{{ $stokFisik }}"
+                                        class="input-field w-full text-right"
+                                        placeholder="—"
+                                        data-stok-sistem="{{ $barang['stok'] }}"
+                                        data-stok-input="{{ $index }}"
+                                    >
+                                </td>
+                                <td>
+                                    <span
+                                        class="block text-right font-semibold text-slate-400"
+                                        data-selisih-cell="{{ $index }}"
+                                    >—</span>
+                                </td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        name="detail[{{ $index }}][alasan]"
+                                        value="{{ $alasan }}"
+                                        class="input-field w-full"
+                                        placeholder="Opsional"
+                                    >
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <div class="flex flex-wrap gap-3">
@@ -69,112 +136,40 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const barangOptions = @json($barangOptions);
-            const barangMap = Object.fromEntries(barangOptions.map(item => [String(item.id), item]));
-            let rows = @json($detailItems);
+            // Live selisih calculation
+            document.querySelectorAll('[data-stok-input]').forEach(function (input) {
+                const index = input.getAttribute('data-stok-input');
+                const stokSistem = parseInt(input.getAttribute('data-stok-sistem'), 10);
+                const selisihCell = document.querySelector(`[data-selisih-cell="${index}"]`);
 
-            const escHtml = (str) => String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-            const rowsContainer = document.querySelector('[data-opname-rows]');
-            const addButton = document.querySelector('[data-opname-add]');
-
-            const render = () => {
-                rowsContainer.innerHTML = rows.map((row, index) => {
-                    const barang = barangMap[String(row.barang_id ?? '')];
-                    const stokSistem = barang ? Number(barang.stok) : 0;
-                    const stokFisik = Number(row.stok_fisik || 0);
-                    const selisih = barang ? stokFisik - stokSistem : 0;
-
-                    return `
-                        <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-                            <div class="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_180px_180px_180px_auto]">
-                                <div>
-                                    <label class="label-text">Barang</label>
-                                    <select name="detail[${index}][barang_id]" class="select-field" required data-row-select="${index}">
-                                        <option value="">Pilih barang</option>
-                                        ${barangOptions.map(item => `
-                                            <option value="${escHtml(item.id)}" ${String(row.barang_id ?? '') === String(item.id) ? 'selected' : ''}>
-                                                ${escHtml(item.nama)} (${escHtml(item.kode)})
-                                            </option>
-                                        `).join('')}
-                                    </select>
-                                    <p class="hint-text">${barang ? `${escHtml(barang.kategori)} • Stok sistem ${barang.stok} ${escHtml(barang.satuan)}` : 'Pilih barang untuk melihat stok sistem.'}</p>
-                                </div>
-                                <div>
-                                    <label class="label-text">Stok Sistem</label>
-                                    <input type="number" class="input-field bg-slate-100" value="${barang ? stokSistem : ''}" readonly>
-                                </div>
-                                <div>
-                                    <label class="label-text">Stok Fisik</label>
-                                    <input type="number" min="0" step="1" name="detail[${index}][stok_fisik]" class="input-field" value="${row.stok_fisik ?? ''}" required data-row-stok="${index}">
-                                </div>
-                                <div>
-                                    <label class="label-text">Selisih</label>
-                                    <input type="text" data-row-selisih="${index}" class="input-field ${selisih === 0 ? 'text-slate-500' : (selisih > 0 ? 'text-emerald-700' : 'text-rose-700')}" value="${barang ? selisih : '-'}" readonly>
-                                </div>
-                                <div class="flex items-end">
-                                    <button type="button" class="btn btn-danger px-3 py-2" data-row-remove="${index}" ${rows.length === 1 ? 'disabled' : ''}>
-                                        <x-ui.icon name="trash" class="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <label class="label-text">Alasan Selisih</label>
-                                <textarea name="detail[${index}][alasan]" class="textarea-field min-h-[90px]" placeholder="Tulis alasan jika stok fisik berbeda dari sistem">${escHtml(row.alasan)}</textarea>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            };
-
-            rowsContainer.addEventListener('change', function (event) {
-                const selectIndex = event.target.getAttribute('data-row-select');
-                const stokIndex = event.target.getAttribute('data-row-stok');
-
-                if (selectIndex !== null) {
-                    rows[selectIndex].barang_id = event.target.value;
-                    render();
-                }
-
-                if (stokIndex !== null) {
-                    rows[stokIndex].stok_fisik = event.target.value;
-                    render();
-                }
-            });
-
-            rowsContainer.addEventListener('input', function (event) {
-                const stokIndex = event.target.getAttribute('data-row-stok');
-
-                if (stokIndex !== null) {
-                    rows[stokIndex].stok_fisik = event.target.value;
-                    const barang = barangMap[String(rows[stokIndex].barang_id ?? '')];
-                    if (barang) {
-                        const selisih = Number(event.target.value || 0) - Number(barang.stok);
-                        const selisihEl = rowsContainer.querySelector(`[data-row-selisih="${stokIndex}"]`);
-                        if (selisihEl) {
-                            selisihEl.value = selisih;
-                            selisihEl.className = `input-field ${selisih === 0 ? 'text-slate-500' : (selisih > 0 ? 'text-emerald-700' : 'text-rose-700')}`;
-                        }
+                const update = () => {
+                    if (input.value === '' || input.value === null) {
+                        selisihCell.textContent = '—';
+                        selisihCell.className = 'block text-right font-semibold text-slate-400';
+                        return;
                     }
-                }
+                    const selisih = parseInt(input.value, 10) - stokSistem;
+                    selisihCell.textContent = (selisih > 0 ? '+' : '') + selisih;
+                    selisihCell.className = 'block text-right font-semibold ' + (
+                        selisih === 0 ? 'text-slate-500' :
+                        selisih > 0   ? 'text-emerald-700' : 'text-rose-700'
+                    );
+                };
+
+                input.addEventListener('input', update);
+                // Restore selisih on page reload after validation error
+                if (input.value !== '') update();
             });
 
-            rowsContainer.addEventListener('click', function (event) {
-                const button = event.target.closest('[data-row-remove]');
-                if (!button) {
-                    return;
-                }
-
-                rows.splice(Number(button.getAttribute('data-row-remove')), 1);
-                render();
+            // Search filter
+            const searchInput = document.getElementById('opname-search');
+            searchInput?.addEventListener('input', function () {
+                const q = this.value.toLowerCase().trim();
+                document.querySelectorAll('[data-barang-row]').forEach(row => {
+                    const nama = row.getAttribute('data-nama') || '';
+                    row.style.display = q === '' || nama.includes(q) ? '' : 'none';
+                });
             });
-
-            addButton.addEventListener('click', function () {
-                rows.push({ barang_id: '', stok_fisik: '', alasan: '' });
-                render();
-            });
-
-            render();
         });
     </script>
 @endpush

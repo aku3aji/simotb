@@ -13,7 +13,6 @@ class StoreReturPenjualanRequest extends BaseFormRequest
     public function rules(): array
     {
         return [
-            'nomor_retur' => ['required', 'string', 'max:100', Rule::unique('retur_penjualan', 'nomor_retur')],
             'penjualan_id' => ['required', 'exists:penjualan,id'],
             'tanggal' => ['required', 'date'],
             'alasan' => ['nullable', 'string', 'max:1000'],

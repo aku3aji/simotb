@@ -3,37 +3,47 @@
 namespace App\Exports;
 
 use App\Models\Barang;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StokExport implements FromCollection, ShouldAutoSize, WithHeadings, WithStyles, WithTitle
+class StokExport implements FromQuery, ShouldAutoSize, WithChunkReading, WithHeadings, WithMapping, WithStyles, WithTitle
 {
+    private int $rowNumber = 0;
+
     public function __construct(private readonly int $kategoriId = 0) {}
 
-    public function collection()
+    public function query(): Builder
     {
         return Barang::query()
             ->with(['kategori', 'satuan', 'merek'])
             ->when($this->kategoriId > 0, fn ($q) => $q->where('kategori_id', $this->kategoriId))
-            ->orderBy('nama')
-            ->get()
-            ->map(fn ($item, $i) => [
-                'No'         => $i + 1,
-                'Kode'       => $item->kode_barang,
-                'Nama'       => $item->nama,
-                'Kategori'   => $item->kategori->nama ?? '-',
-                'Merek'      => $item->merek->nama ?? '-',
-                'Satuan'     => $item->satuan->nama ?? '-',
-                'Stok'       => $item->stok,
-                'Stok Min.'  => $item->stok_minimum,
-                'Harga Jual' => (float) $item->harga_jual,
-                'Status'     => $item->stok <= $item->stok_minimum ? 'Menipis' : 'Aman',
-            ]);
+            ->orderBy('nama');
+    }
+
+    public function map($item): array
+    {
+        $this->rowNumber++;
+
+        return [
+            $this->rowNumber,
+            $item->kode_barang,
+            $item->nama,
+            $item->kategori->nama ?? '-',
+            $item->merek->nama ?? '-',
+            $item->satuan->nama ?? '-',
+            $item->stok,
+            $item->stok_minimum,
+            (float) $item->harga_jual,
+            $item->stok <= $item->stok_minimum ? 'Menipis' : 'Aman',
+        ];
     }
 
     public function headings(): array
@@ -44,6 +54,11 @@ class StokExport implements FromCollection, ShouldAutoSize, WithHeadings, WithSt
     public function title(): string
     {
         return 'Laporan Stok';
+    }
+
+    public function chunkSize(): int
+    {
+        return 500;
     }
 
     public function styles(Worksheet $sheet): array

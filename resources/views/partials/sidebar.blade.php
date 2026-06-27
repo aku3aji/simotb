@@ -35,7 +35,16 @@
         ['label' => 'Retur Penjualan', 'route' => 'transaksi.retur-penjualan.index', 'icon' => 'rotate-ccw', 'active' => request()->routeIs('transaksi.retur-penjualan.*')],
 
         ['type' => 'section', 'label' => 'Operasional'],
-        ['label' => 'Stok & Opname', 'route' => 'inventory.stok-opname.index', 'icon' => 'boxes', 'active' => request()->routeIs('inventory.*')],
+        [
+            'label' => 'Stok & Opname',
+            'icon' => 'boxes',
+            'active' => request()->routeIs('inventory.stok-opname.*') || request()->routeIs('inventory.mutasi-stok.*'),
+            'open' => request()->routeIs('inventory.stok-opname.*') || request()->routeIs('inventory.mutasi-stok.*'),
+            'children' => [
+                ['label' => 'Stock Opname', 'route' => 'inventory.stok-opname.index', 'active' => request()->routeIs('inventory.stok-opname.*')],
+                ['label' => 'Mutasi Stok', 'route' => 'inventory.mutasi-stok.index', 'active' => request()->routeIs('inventory.mutasi-stok.*')],
+            ],
+        ],
     ];
 
     if ($user?->isOwner()) {
@@ -43,13 +52,13 @@
         $menu[] = ['type' => 'section', 'label' => 'Laporan'];
         $menu[] = ['label' => 'Laporan', 'route' => 'laporan.stok', 'icon' => 'file-bar-chart', 'active' => request()->routeIs('laporan.*')];
         $menu[] = ['type' => 'section', 'label' => 'Pengguna'];
-        $menu[] = ['label' => 'Manajemen User', 'route' => 'pengguna.user.index', 'icon' => 'clipboard-list', 'active' => request()->routeIs('pengguna.*')];
+        $menu[] = ['label' => 'User', 'route' => 'pengguna.user.index', 'icon' => 'clipboard-list', 'active' => request()->routeIs('pengguna.*')];
     }
 @endphp
 
 <div class="fixed inset-0 z-30 hidden bg-slate-950/20 lg:hidden" data-sidebar-overlay></div>
 
-<aside class="fixed inset-y-0 left-0 z-40 flex w-[280px] -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0" data-sidebar>
+<aside class="fixed inset-y-0 left-0 z-40 flex w-[280px] -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:min-h-screen lg:translate-x-0" data-sidebar>
     <div class="flex items-center justify-between border-b border-slate-200 px-5 py-5">
         <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-700 text-white shadow-soft">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Notifikasi extends Model
@@ -22,7 +23,7 @@ class Notifikasi extends Model
         'dibaca_pada' => 'datetime',
     ];
 
-    public function scopeBelumDibaca($query)
+    public function scopeBelumDibaca(Builder $query)
     {
         return $query->whereNull('dibaca_pada');
     }

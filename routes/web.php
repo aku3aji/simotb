@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\ProfilController;
+use App\Http\Controllers\Inventory\MutasiStokController;
 use App\Http\Controllers\Inventory\StokOpnameController;
 use App\Http\Controllers\Laporan\LaporanController;
 use App\Http\Controllers\MasterData\BarangController;
@@ -32,6 +35,15 @@ Route::middleware('guest')->group(function () {
         ->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])
         ->name('login.store');
+
+    Route::get('/lupa-password', [ForgotPasswordController::class, 'showForm'])
+        ->name('password.request');
+    Route::post('/lupa-password', [ForgotPasswordController::class, 'sendLink'])
+        ->name('password.email');
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showForm'])
+        ->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword'])
+        ->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
@@ -69,6 +81,8 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::resource('stok-opname', StokOpnameController::class)
                 ->only(['index', 'create', 'store', 'show', 'destroy']);
+            Route::get('mutasi-stok', [MutasiStokController::class, 'index'])->name('mutasi-stok.index');
+            Route::get('mutasi-stok/{barang}', [MutasiStokController::class, 'show'])->name('mutasi-stok.show');
         });
 
     Route::prefix('transaksi')
@@ -81,6 +95,7 @@ Route::middleware('auth')->group(function () {
                 ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
             Route::delete('pembayaran-piutang/bulk-destroy', [PembayaranPiutangController::class, 'destroyBulk'])->name('pembayaran-piutang.bulk-destroy');
+            Route::get('pembayaran-piutang/{penjualan}/riwayat', [PembayaranPiutangController::class, 'show'])->name('pembayaran-piutang.show');
             Route::resource('pembayaran-piutang', PembayaranPiutangController::class)
                 ->except(['show']);
 

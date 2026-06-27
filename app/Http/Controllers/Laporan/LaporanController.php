@@ -16,7 +16,6 @@ use App\Models\Pembelian;
 use App\Models\Penjualan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
@@ -59,8 +58,8 @@ class LaporanController extends Controller
 
         $pembelian = Pembelian::query()
             ->with(['vendor', 'user'])
-            ->when($tanggalMulai !== '', fn ($q) => $q->whereDate('tanggal', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($q) => $q->whereDate('tanggal', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($q) => $q->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($q) => $q->where('tanggal', '<=', $tanggalSelesai))
             ->latest('tanggal')
             ->latest('id')
             ->get();
@@ -97,8 +96,8 @@ class LaporanController extends Controller
 
         $penjualan = Penjualan::query()
             ->with(['pelanggan', 'user'])
-            ->when($tanggalMulai !== '', fn ($q) => $q->whereDate('tanggal', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($q) => $q->whereDate('tanggal', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($q) => $q->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($q) => $q->where('tanggal', '<=', $tanggalSelesai))
             ->when($tipePembayaran !== '', fn ($q) => $q->where('tipe_pembayaran', $tipePembayaran))
             ->latest('tanggal')
             ->latest('id')
@@ -141,8 +140,8 @@ class LaporanController extends Controller
             ->with(['pelanggan', 'user', 'pembayaranPiutang'])
             ->kredit()
             ->belumLunas()
-            ->when($tanggalMulai !== '', fn ($q) => $q->whereDate('jatuh_tempo', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($q) => $q->whereDate('jatuh_tempo', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($q) => $q->where('jatuh_tempo', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($q) => $q->where('jatuh_tempo', '<=', $tanggalSelesai))
             ->latest('jatuh_tempo')
             ->latest('id')
             ->get();
@@ -179,8 +178,8 @@ class LaporanController extends Controller
 
         $absensi = Absensi::query()
             ->with(['pegawai', 'user'])
-            ->when($tanggalMulai !== '', fn ($q) => $q->whereDate('tanggal', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($q) => $q->whereDate('tanggal', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($q) => $q->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($q) => $q->where('tanggal', '<=', $tanggalSelesai))
             ->when($pegawaiId > 0, fn ($q) => $q->where('pegawai_id', $pegawaiId))
             ->latest('tanggal')
             ->latest('id')
@@ -188,11 +187,12 @@ class LaporanController extends Controller
 
         $pegawaiList = Pegawai::query()->orderBy('nama')->get();
 
+        $statusCount = $absensi->countBy('status');
         $summary = [
-            'hadir' => $absensi->where('status', Absensi::STATUS_HADIR)->count(),
-            'izin'  => $absensi->where('status', Absensi::STATUS_IZIN)->count(),
-            'sakit' => $absensi->where('status', Absensi::STATUS_SAKIT)->count(),
-            'alpha' => $absensi->where('status', Absensi::STATUS_ALPHA)->count(),
+            'hadir' => $statusCount->get(Absensi::STATUS_HADIR, 0),
+            'izin'  => $statusCount->get(Absensi::STATUS_IZIN, 0),
+            'sakit' => $statusCount->get(Absensi::STATUS_SAKIT, 0),
+            'alpha' => $statusCount->get(Absensi::STATUS_ALPHA, 0),
         ];
 
         $gajiSummary = $absensi->groupBy('pegawai_id')->map(function ($items) {

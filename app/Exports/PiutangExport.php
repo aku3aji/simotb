@@ -3,43 +3,53 @@
 namespace App\Exports;
 
 use App\Models\Penjualan;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class PiutangExport implements FromCollection, ShouldAutoSize, WithHeadings, WithStyles, WithTitle
+class PiutangExport implements FromQuery, ShouldAutoSize, WithChunkReading, WithHeadings, WithMapping, WithStyles, WithTitle
 {
+    private int $rowNumber = 0;
+
     public function __construct(
         private readonly string $tanggalMulai = '',
         private readonly string $tanggalSelesai = '',
     ) {}
 
-    public function collection()
+    public function query(): Builder
     {
         return Penjualan::query()
             ->with(['pelanggan', 'user'])
             ->kredit()
             ->belumLunas()
-            ->when($this->tanggalMulai !== '', fn ($q) => $q->whereDate('jatuh_tempo', '>=', $this->tanggalMulai))
-            ->when($this->tanggalSelesai !== '', fn ($q) => $q->whereDate('jatuh_tempo', '<=', $this->tanggalSelesai))
+            ->when($this->tanggalMulai !== '', fn ($q) => $q->where('jatuh_tempo', '>=', $this->tanggalMulai))
+            ->when($this->tanggalSelesai !== '', fn ($q) => $q->where('jatuh_tempo', '<=', $this->tanggalSelesai))
             ->latest('jatuh_tempo')
-            ->latest('id')
-            ->get()
-            ->map(fn ($item, $i) => [
-                'No'              => $i + 1,
-                'Nomor'           => $item->nomor_penjualan,
-                'Pelanggan'       => $item->pelanggan->nama ?? 'Pelanggan Umum',
-                'Tgl. Transaksi'  => optional($item->tanggal)->format('d/m/Y'),
-                'Jatuh Tempo'     => optional($item->jatuh_tempo)->format('d/m/Y') ?? '-',
-                'Total'           => (float) $item->total,
-                'Sudah Dibayar'   => (float) $item->dibayar,
-                'Sisa Piutang'    => (float) $item->sisa_piutang,
-                'Status'          => str_replace('_', ' ', ucfirst($item->status_pembayaran)),
-            ]);
+            ->latest('id');
+    }
+
+    public function map($item): array
+    {
+        $this->rowNumber++;
+
+        return [
+            $this->rowNumber,
+            $item->nomor_penjualan,
+            $item->pelanggan->nama ?? 'Pelanggan Umum',
+            optional($item->tanggal)->format('d/m/Y'),
+            optional($item->jatuh_tempo)->format('d/m/Y') ?? '-',
+            (float) $item->total,
+            (float) $item->dibayar,
+            (float) $item->sisa_piutang,
+            str_replace('_', ' ', ucfirst($item->status_pembayaran)),
+        ];
     }
 
     public function headings(): array
@@ -50,6 +60,11 @@ class PiutangExport implements FromCollection, ShouldAutoSize, WithHeadings, Wit
     public function title(): string
     {
         return 'Laporan Piutang';
+    }
+
+    public function chunkSize(): int
+    {
+        return 500;
     }
 
     public function styles(Worksheet $sheet): array

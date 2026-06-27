@@ -5,9 +5,7 @@
         ->take(2)
         ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
         ->implode('');
-    $settingsUrl = $currentUser->isOwner()
-        ? route('pengguna.user.index')
-        : route('profil.edit');
+    $settingsUrl = route('profil.edit');
 @endphp
 
 <header class="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur">
@@ -64,7 +62,7 @@
                 <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-700 font-bold text-white">
                     {{ $avatarText ?: 'PU' }}
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" data-confirm="Apakah Anda yakin ingin logout?">
                     @csrf
                     <button type="submit" class="text-slate-400 transition hover:text-slate-700" title="Logout">
                         <x-ui.icon name="log-out" class="h-4 w-4" />

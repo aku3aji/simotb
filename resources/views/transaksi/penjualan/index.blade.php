@@ -3,7 +3,7 @@
 @section('title', 'Penjualan')
 
 @section('content')
-    <x-ui.page-header title="Kasir Penjualan" description="Catat transaksi tunai maupun kredit dengan ringkasan pembayaran yang jelas.">
+    <x-ui.page-header title="Transaksi Penjualan" description="Catat transaksi tunai maupun kredit dengan ringkasan pembayaran yang jelas.">
         <a href="{{ route('transaksi.penjualan.create') }}" class="btn btn-primary">
             <x-ui.icon name="plus" class="h-4 w-4" />
             <span>Buat Penjualan</span>
@@ -54,7 +54,7 @@
         </form>
 
         @if ($penjualan->isEmpty())
-            <x-ui.empty-state title="Belum ada penjualan" description="Transaksi penjualan akan muncul di sini setelah kasir mulai mencatat nota." icon="shopping-cart" />
+            <x-ui.empty-state title="Belum ada penjualan" description="Transaksi penjualan akan muncul di sini setelah mulai mencatat nota." icon="shopping-cart" />
         @else
             <div class="overflow-x-auto">
                 <table class="data-table">

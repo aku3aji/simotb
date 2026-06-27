@@ -45,8 +45,8 @@ class ReturPenjualanController extends Controller
                         ->orWhereHas('penjualan.pelanggan', fn ($pelanggan) => $pelanggan->where('nama', 'like', '%' . $q . '%'));
                 });
             })
-            ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($query) => $query->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($query) => $query->where('tanggal', '<=', $tanggalSelesai))
             ->orderBy($sortBy, $sortDir)
             ->orderBy('id', $sortDir)
             ->paginate($perPage)
@@ -79,7 +79,7 @@ class ReturPenjualanController extends Controller
 
         DB::transaction(function () use ($validated, $detailRows, $userId) {
             $returPenjualan = ReturPenjualan::create([
-                'nomor_retur' => $validated['nomor_retur'],
+                'nomor_retur' => $this->generateNomor(),
                 'penjualan_id' => $validated['penjualan_id'],
                 'tanggal' => $validated['tanggal'],
                 'total_retur' => (float) $detailRows->sum('subtotal'),
@@ -244,11 +244,13 @@ class ReturPenjualanController extends Controller
     private function generateNomor(): string
     {
         $prefix = 'RTR-' . now()->format('Ymd') . '-';
-        $count = ReturPenjualan::query()
+        $last = ReturPenjualan::query()
             ->where('nomor_retur', 'like', $prefix . '%')
+            ->orderByDesc('nomor_retur')
             ->lockForUpdate()
-            ->count();
-        return $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+            ->value('nomor_retur');
+        $next = $last ? ((int) substr($last, strlen($prefix)) + 1) : 1;
+        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     private function penjualanList(?int $currentPenjualanId = null)

@@ -8,6 +8,18 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2/dist/css/tom-select.min.css">
+    <style>
+        .ts-wrapper .ts-control { border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.625rem 1rem; font-size: 0.875rem; line-height: 1.25rem; height: 2.5rem; min-height: 0; overflow: hidden; box-shadow: none; background: #fff; }
+        .ts-wrapper.focus .ts-control { border-color: #3b5bdb; box-shadow: 0 0 0 3px rgba(59,91,219,.12); }
+        .ts-wrapper .ts-control input { font-size: 0.875rem; }
+        .ts-dropdown { border: 1px solid #e2e8f0; border-radius: 0.5rem; box-shadow: 0 4px 16px rgba(0,0,0,.08); margin-top: 2px; }
+        .ts-dropdown .ts-dropdown-content { max-height: 220px; }
+        .ts-dropdown .option { font-size: 0.875rem; padding: 0.45rem 0.75rem; }
+        .ts-dropdown .option.active { background: #eef2ff; color: #1e40af; }
+        .ts-dropdown-input-wrap { padding: 0.35rem 0.5rem; border-bottom: 1px solid #f1f5f9; }
+        .ts-dropdown-input-wrap input { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.35rem 0.6rem; font-size: 0.8125rem; outline: none; }
+    </style>
 </head>
 <body class="min-h-screen bg-app-glow">
     <div class="relative min-h-screen lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -87,6 +99,7 @@
         });
     </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2/dist/js/tom-select.complete.min.js"></script>
     @stack('scripts')
 </body>
 </html>

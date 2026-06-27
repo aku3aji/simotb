@@ -5,7 +5,7 @@
 @section('content')
     <x-ui.page-header title="Laporan Penjualan" description="Rekap transaksi penjualan dalam periode tertentu.">
         <a href="{{ route('laporan.penjualan', array_merge(request()->query(), ['export' => 'excel'])) }}" class="btn btn-secondary">
-            <x-ui.icon name="table" class="h-4 w-4" />
+            <x-ui.icon name="file-spreadsheet" class="h-4 w-4" />
             <span>Export Excel</span>
         </a>
         <a href="{{ route('laporan.penjualan', array_merge(request()->query(), ['export' => 'pdf'])) }}" class="btn btn-primary">

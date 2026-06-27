@@ -31,10 +31,11 @@
                 <label class="label-text" for="nomor_pembelian">Nomor Pembelian</label>
                 <input id="nomor_pembelian" name="nomor_pembelian" type="text"
                     value="{{ $nomorValue }}"
-                    class="input-field"
+                    class="input-field {{ !$isEdit ? 'bg-slate-100' : '' }}"
+                    {{ !$isEdit ? 'readonly' : '' }}
                     required>
                 @if (!$isEdit)
-                    <p class="hint-text mt-1">Diisi otomatis — bisa diubah jika diperlukan.</p>
+                    <p class="hint-text mt-1">Nomor dibuat otomatis oleh sistem.</p>
                 @endif
             </div>
             <div>
@@ -66,16 +67,16 @@
         </div>
     </section>
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
-        <section class="surface overflow-hidden">
+    <div class="grid gap-6 2xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
+        <section class="surface">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-900">Detail Barang</h2>
+                    <h2 class="text-lg font-bold text-slate-900">Item Pembelian</h2>
                     <p class="mt-1 text-sm text-slate-500">Tambahkan barang yang dibeli dari vendor, lalu isi jumlah dan harga beli.</p>
                 </div>
                 <button type="button" class="btn btn-secondary" data-pembelian-add>
                     <x-ui.icon name="plus" class="h-4 w-4" />
-                    <span>Tambah Baris</span>
+                    <span>Tambah Barang</span>
                 </button>
             </div>
 
@@ -118,6 +119,18 @@
 
                 const formatRupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value || 0));
 
+                const initTomSelects = () => {
+                    rowsEl.querySelectorAll('select[data-pembelian-field="barang_id"]').forEach(sel => {
+                        if (sel.tomselect) return;
+                        new TomSelect(sel, {
+                            plugins: { dropdown_input: {} },
+                            maxOptions: null,
+                            highlight: true,
+                            placeholder: 'Pilih barang',
+                        });
+                    });
+                };
+
                 const render = () => {
                     const total = rows.reduce((sum, row) => sum + (Number(row.jumlah || 0) * Number(row.harga_beli || 0)), 0);
                     totalEl.textContent = `Rp ${formatRupiah(total)}`;
@@ -149,37 +162,40 @@
 
                         return `
                             <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-                                <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_140px_180px_180px_auto]">
+                                <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_140px_180px_180px_auto] 2xl:grid-cols-[minmax(0,1.35fr)_96px_140px_140px_auto]">
                                     <div>
                                         <label class="label-text">Barang</label>
                                         <select name="detail[${index}][barang_id]" class="select-field" data-pembelian-field="barang_id" data-index="${index}" required>
                                             <option value="">Pilih barang</option>
                                             ${barangSelectOptions}
                                         </select>
-                                        ${barangNamaBaruInput}
-                                        ${hintText}
                                     </div>
-                                    <div>
+                                    <div class="flex flex-col">
                                         <label class="label-text">Jumlah</label>
-                                        <input type="number" min="1" step="1" name="detail[${index}][jumlah]" value="${row.jumlah ?? 1}" class="input-field" data-pembelian-field="jumlah" data-index="${index}" required>
+                                        <input type="number" min="0.00" step="1" name="detail[${index}][jumlah]" value="${row.jumlah ?? 1}" class="input-field flex-1" data-pembelian-field="jumlah" data-index="${index}" required>
                                     </div>
-                                    <div>
+                                    <div class="flex flex-col">
                                         <label class="label-text">Harga Beli</label>
-                                        <input type="number" min="0.00" step="500" name="detail[${index}][harga_beli]" value="${row.harga_beli ?? (selected ? selected.harga_beli : '')}" class="input-field" data-pembelian-field="harga_beli" data-index="${index}" required>
+                                        <input type="number" min="0.00" step="500" name="detail[${index}][harga_beli]" value="${row.harga_beli ?? (selected ? selected.harga_beli : '')}" class="input-field flex-1" data-pembelian-field="harga_beli" data-index="${index}" required>
                                     </div>
-                                    <div>
+                                    <div class="flex flex-col">
                                         <label class="label-text">Subtotal</label>
-                                        <input type="text" value="Rp ${formatRupiah(subtotal)}" class="input-field bg-slate-100 font-semibold text-slate-900" readonly data-pembelian-subtotal="${index}">
+                                        <input type="text" value="Rp ${formatRupiah(subtotal)}" class="input-field flex-1 bg-slate-100 font-semibold text-slate-900" readonly data-pembelian-subtotal="${index}">
                                     </div>
-                                    <div class="flex items-end">
-                                        <button type="button" class="btn btn-danger px-3 py-2" data-pembelian-remove="${index}" ${rows.length === 1 ? 'disabled' : ''}>
-                                            <x-ui.icon name="trash" class="h-4 w-4" />
+                                    <div class="flex flex-col">
+                                        <label class="label-text invisible">Del</label>
+                                        <button type="button" class="btn btn-danger flex-1 px-3" data-pembelian-remove="${index}" ${rows.length === 1 ? 'disabled' : ''}>
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                         </button>
                                     </div>
                                 </div>
+                                ${barangNamaBaruInput}
+                                ${hintText}
                             </div>
                         `;
                     }).join('');
+
+                    initTomSelects();
                 };
 
                 rowsEl.addEventListener('input', function (event) {
@@ -214,9 +230,18 @@
                                 if (selected) rows[index].harga_beli = selected.harga_beli;
                                 rows[index].barang_nama_baru = '';
                             }
+                            requestAnimationFrame(render);
+                            return;
                         }
 
                         render();
+                    }
+                });
+
+                rowsEl.addEventListener('keydown', function (event) {
+                    const field = event.target.getAttribute('data-pembelian-field');
+                    if ((field === 'jumlah' || field === 'harga_beli') && ['-', 'e', 'E', '+'].includes(event.key)) {
+                        event.preventDefault();
                     }
                 });
 

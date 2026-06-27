@@ -112,7 +112,12 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="flex justify-center">
+                                    <div class="flex justify-center gap-2">
+                                        <a href="{{ route('transaksi.pembayaran-piutang.show', $item) }}"
+                                           class="btn btn-secondary px-3 py-2 text-xs">
+                                            <x-ui.icon name="eye" class="h-3.5 w-3.5" />
+                                            <span>Riwayat</span>
+                                        </a>
                                         <a href="{{ route('transaksi.pembayaran-piutang.create', ['penjualan_id' => $item->id]) }}"
                                            class="btn btn-primary px-3 py-2 text-xs">
                                             <x-ui.icon name="plus" class="h-3.5 w-3.5" />
@@ -171,6 +176,9 @@
                                 <td>{{ $item->user->name ?? '-' }}</td>
                                 <td>
                                     <div class="flex justify-center gap-2">
+                                        <a href="{{ route('transaksi.pembayaran-piutang.show', $item->penjualan) }}" class="btn btn-secondary px-3 py-2">
+                                            <x-ui.icon name="eye" class="h-4 w-4" />
+                                        </a>
                                         <a href="{{ route('transaksi.pembayaran-piutang.edit', $item) }}" class="btn btn-secondary px-3 py-2">
                                             <x-ui.icon name="pencil" class="h-4 w-4" />
                                         </a>

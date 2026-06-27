@@ -39,7 +39,7 @@ class PembelianController extends Controller
         }
 
         $statHariIni = Pembelian::query()
-            ->whereDate('tanggal', now()->toDateString())
+            ->where('tanggal', now()->toDateString())
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
             ->first();
 
@@ -57,8 +57,8 @@ class PembelianController extends Controller
                 });
             })
             ->when($vendorId !== '', fn ($query) => $query->where('vendor_id', $vendorId))
-            ->when($tanggalMulai !== '', fn ($query) => $query->whereDate('tanggal', '>=', $tanggalMulai))
-            ->when($tanggalSelesai !== '', fn ($query) => $query->whereDate('tanggal', '<=', $tanggalSelesai))
+            ->when($tanggalMulai !== '', fn ($query) => $query->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($query) => $query->where('tanggal', '<=', $tanggalSelesai))
             ->orderBy($sortBy, $sortDir)
             ->orderBy('id', $sortDir)
             ->paginate($perPage)
@@ -239,11 +239,13 @@ class PembelianController extends Controller
     private function generateNomor(): string
     {
         $prefix = 'PBL-' . now()->format('Ymd') . '-';
-        $count = Pembelian::query()
+        $last = Pembelian::query()
             ->where('nomor_pembelian', 'like', $prefix . '%')
+            ->orderByDesc('nomor_pembelian')
             ->lockForUpdate()
-            ->count();
-        return $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+            ->value('nomor_pembelian');
+        $next = $last ? ((int) substr($last, strlen($prefix)) + 1) : 1;
+        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     private function formData(): array

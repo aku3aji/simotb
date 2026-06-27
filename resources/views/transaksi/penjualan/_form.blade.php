@@ -32,10 +32,11 @@
                 <label class="label-text" for="nomor_penjualan">Nomor Penjualan</label>
                 <input id="nomor_penjualan" name="nomor_penjualan" type="text"
                     value="{{ $nomorValue }}"
-                    class="input-field"
+                    class="input-field {{ !$isEdit ? 'bg-slate-100' : '' }}"
+                    {{ !$isEdit ? 'readonly' : '' }}
                     required>
                 @if (!$isEdit)
-                    <p class="hint-text mt-1">Diisi otomatis — bisa diubah jika diperlukan.</p>
+                    <p class="hint-text mt-1">Nomor dibuat otomatis oleh sistem.</p>
                 @endif
             </div>
             <div>
@@ -63,8 +64,8 @@
         </div>
     </section>
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
-        <section class="surface overflow-hidden">
+    <div class="grid gap-6 2xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
+        <section class="surface">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div>
                     <h2 class="text-lg font-bold text-slate-900">Item Penjualan</h2>
@@ -72,14 +73,14 @@
                 </div>
                 <button type="button" class="btn btn-secondary" data-penjualan-add>
                     <x-ui.icon name="plus" class="h-4 w-4" />
-                    <span>Tambah Item</span>
+                    <span>Tambah Barang</span>
                 </button>
             </div>
 
             <div class="space-y-4 px-5 py-5" data-penjualan-rows></div>
         </section>
 
-        <aside class="surface p-6 xl:sticky xl:top-24 xl:self-start">
+        <aside class="surface p-6 2xl:sticky 2xl:top-24 2xl:self-start">
             <h3 class="text-2xl font-extrabold text-slate-900">Ringkasan Pembayaran</h3>
 
             <div class="mt-6">
@@ -207,6 +208,18 @@
                     countEl.textContent = `${jumlahItem} qty`;
                 };
 
+                const initTomSelects = () => {
+                    rowsEl.querySelectorAll('select[data-penjualan-field="barang_id"]').forEach(sel => {
+                        if (sel.tomselect) return;
+                        new TomSelect(sel, {
+                            plugins: { dropdown_input: {} },
+                            maxOptions: null,
+                            highlight: true,
+                            placeholder: 'Pilih barang',
+                        });
+                    });
+                };
+
                 const render = () => {
                     rowsEl.innerHTML = rows.map((row, index) => {
                         const isNew = String(row.barang_id ?? '') === '__new__';
@@ -237,38 +250,40 @@
 
                         return `
                             <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-                                <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_120px_180px_180px_auto]">
+                                <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_120px_180px_180px_auto] 2xl:grid-cols-[minmax(0,1.35fr)_96px_140px_140px_auto]">
                                     <div>
                                         <label class="label-text">Barang</label>
                                         <select name="detail[${index}][barang_id]" class="select-field" data-penjualan-field="barang_id" data-index="${index}" required>
                                             <option value="">Pilih barang</option>
                                             ${barangSelectOptions}
                                         </select>
-                                        ${barangNamaBaruInput}
-                                        ${hintText}
                                     </div>
-                                    <div>
-                                        <label class="label-text">Qty</label>
-                                        <input type="number" min="1" step="1" name="detail[${index}][jumlah]" value="${row.jumlah ?? 1}" class="input-field" data-penjualan-field="jumlah" data-index="${index}" required>
+                                    <div class="flex flex-col">
+                                        <label class="label-text">Jumlah</label>
+                                        <input type="number" min="0.00" step="1" name="detail[${index}][jumlah]" value="${row.jumlah ?? 1}" class="input-field flex-1" data-penjualan-field="jumlah" data-index="${index}" required>
                                     </div>
-                                    <div>
+                                    <div class="flex flex-col">
                                         <label class="label-text">Harga Jual</label>
-                                        <input type="number" min="0.00" step="500" name="detail[${index}][harga_jual]" value="${row.harga_jual ?? (selected ? selected.harga_jual : '')}" class="input-field" data-penjualan-field="harga_jual" data-index="${index}" required>
+                                        <input type="number" min="0.00" step="500" name="detail[${index}][harga_jual]" value="${row.harga_jual ?? (selected ? selected.harga_jual : '')}" class="input-field flex-1" data-penjualan-field="harga_jual" data-index="${index}" required>
                                     </div>
-                                    <div>
+                                    <div class="flex flex-col">
                                         <label class="label-text">Subtotal</label>
-                                        <input type="text" value="${formatRupiah(subtotal)}" class="input-field bg-slate-100 font-semibold text-slate-900" readonly data-penjualan-row-subtotal="${index}">
+                                        <input type="text" value="${formatRupiah(subtotal)}" class="input-field flex-1 bg-slate-100 font-semibold text-slate-900" readonly data-penjualan-row-subtotal="${index}">
                                     </div>
-                                    <div class="flex items-end">
-                                        <button type="button" class="btn btn-danger px-3 py-2" data-penjualan-remove="${index}" ${rows.length === 1 ? 'disabled' : ''}>
-                                            <x-ui.icon name="trash" class="h-4 w-4" />
+                                    <div class="flex flex-col">
+                                        <label class="label-text invisible">Del</label>
+                                        <button type="button" class="btn btn-danger flex-1 px-3" data-penjualan-remove="${index}" ${rows.length === 1 ? 'disabled' : ''}>
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                         </button>
                                     </div>
                                 </div>
+                                ${barangNamaBaruInput}
+                                ${hintText}
                             </div>
                         `;
                     }).join('');
 
+                    initTomSelects();
                     syncSummary();
                 };
 
@@ -306,11 +321,18 @@
                                 if (selected) rows[index].harga_jual = selected.harga_jual;
                                 rows[index].barang_nama_baru = '';
                             }
-                            render();
+                            requestAnimationFrame(render);
                             return;
                         }
 
                         syncSummary();
+                    }
+                });
+
+                rowsEl.addEventListener('keydown', function (event) {
+                    const field = event.target.getAttribute('data-penjualan-field');
+                    if ((field === 'jumlah' || field === 'harga_jual') && ['-', 'e', 'E', '+'].includes(event.key)) {
+                        event.preventDefault();
                     }
                 });
 

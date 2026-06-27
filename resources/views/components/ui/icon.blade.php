@@ -189,6 +189,32 @@
             <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
             <line x1="2" x2="22" y1="2" y2="22" />
             @break
+        @case('file-spreadsheet')
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+            <path d="M8 13h2v5H8zM14 13h2v5h-2zM11 13h2v5h-2z" />
+            <path d="M8 9h8" />
+            @break
+        @case('table')
+            <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M3 10h18" />
+            <path d="M10 3v18" />
+            @break
+        @case('arrow-right-left')
+            <path d="m16 3 4 4-4 4" />
+            <path d="M20 7H4" />
+            <path d="m8 21-4-4 4-4" />
+            <path d="M4 17h16" />
+            @break
+        @case('key')
+            <circle cx="7.5" cy="15.5" r="5.5" />
+            <path d="m21 2-9.6 9.6" />
+            <path d="m15.5 7.5 3 3L22 7l-3-3" />
+            @break
+        @case('lock-open')
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+            @break
         @default
             <circle cx="12" cy="12" r="9" />
     @endswitch

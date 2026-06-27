@@ -5,7 +5,6 @@ namespace App\Http\Controllers\MasterData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MasterData\StoreVendorRequest;
 use App\Http\Requests\MasterData\UpdateVendorRequest;
-use App\Models\Pembelian;
 use App\Models\Vendor;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;

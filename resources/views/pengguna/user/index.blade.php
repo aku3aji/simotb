@@ -3,7 +3,7 @@
 @section('title', 'User')
 
 @section('content')
-    <x-ui.page-header title="Manajemen User" description="Kelola akun owner dan admin yang dapat mengakses sistem.">
+    <x-ui.page-header title="User" description="Kelola akun owner dan admin yang dapat mengakses sistem.">
         <div class="hidden items-center gap-3" data-bulk-bar>
             <span class="text-sm font-semibold text-slate-700"><span data-bulk-count>0</span> dipilih</span>
             <button form="bulk-form" type="submit" class="btn btn-danger">

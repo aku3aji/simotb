@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\MasterData\StorePelangganRequest;
 use App\Http\Requests\MasterData\UpdatePelangganRequest;
 use App\Models\Pelanggan;
-use App\Models\Penjualan;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

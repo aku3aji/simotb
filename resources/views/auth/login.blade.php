@@ -13,7 +13,7 @@
             @csrf
 
             <div>
-                <label class="label-text" for="email">Username atau Email</label>
+                <label class="label-text" for="email">Email</label>
                 <div class="relative">
                     <x-ui.icon name="user-circle" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                     <input
@@ -22,9 +22,10 @@
                         type="email"
                         value="{{ old('email') }}"
                         class="input-field pl-12"
-                        placeholder="admin@sumberalamjaya.com"
+                        placeholder="email@toko.com"
                         required
                         autofocus
+                        autocomplete="email"
                     >
                 </div>
             </div>
@@ -32,7 +33,7 @@
             <div>
                 <div class="mb-2 flex items-center justify-between gap-3">
                     <label class="label-text !mb-0" for="password">Password</label>
-                    <span class="text-sm text-brand-700">Hubungi owner jika lupa sandi.</span>
+                    <a href="{{ route('password.request') }}" class="text-sm text-brand-700 hover:underline">Lupa password?</a>
                 </div>
                 <div class="relative">
                     <x-ui.icon name="clipboard-list" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
