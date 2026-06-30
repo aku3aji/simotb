@@ -11,10 +11,6 @@
                 <span>Hapus Terpilih</span>
             </button>
         </div>
-        <a href="{{ route('pegawai.absensi.create') }}" class="btn btn-primary">
-            <x-ui.icon name="plus" class="h-4 w-4" />
-            <span>Input Absensi</span>
-        </a>
     </x-ui.page-header>
 
     <form id="bulk-form" method="POST" action="{{ route('pegawai.absensi.bulk-destroy') }}"

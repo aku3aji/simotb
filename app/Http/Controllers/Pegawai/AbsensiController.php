@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Pegawai;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Pegawai\StoreAbsensiRequest;
 use App\Http\Requests\Pegawai\UpdateAbsensiRequest;
 use App\Models\Absensi;
 use App\Models\Pegawai;
@@ -41,26 +40,6 @@ class AbsensiController extends Controller
             ->withQueryString();
 
         return view('pegawai.absensi.index', compact('absensi', 'q', 'status', 'tanggal', 'sortBy', 'sortDir', 'perPage'));
-    }
-
-    public function create(): View
-    {
-        return view('pegawai.absensi.create', [
-            'pegawaiList' => Pegawai::query()
-                ->where('status', Pegawai::STATUS_AKTIF)
-                ->orderBy('nama')
-                ->get(),
-        ]);
-    }
-
-    public function store(StoreAbsensiRequest $request): RedirectResponse
-    {
-        Absensi::create($request->validated() + [
-            'user_id' => auth()->id(),
-        ]);
-
-        return redirect()->route('pegawai.absensi.index')
-            ->with('success', 'Data absensi berhasil ditambahkan.');
     }
 
     public function edit(Absensi $absensi): View

@@ -115,6 +115,73 @@
             <div class="surface p-6">
                 <div class="flex items-center justify-between gap-3">
                     <div>
+                        <h2 class="text-2xl font-extrabold text-slate-900">Pengingat Jatuh Tempo</h2>
+                        <p class="mt-1 text-sm text-slate-500">Piutang &amp; utang yang lewat tempo atau jatuh tempo dalam 7 hari.</p>
+                    </div>
+                    <span class="badge badge-warning">{{ $piutangJatuhTempo->count() + $utangJatuhTempo->count() }}</span>
+                </div>
+
+                @if ($piutangJatuhTempo->isEmpty() && $utangJatuhTempo->isEmpty())
+                    <div class="mt-5">
+                        <x-ui.empty-state title="Tidak ada yang mendekati jatuh tempo" description="Semua piutang & utang masih dalam batas aman." icon="check-circle" />
+                    </div>
+                @else
+                    @php
+                        $tempoBadge = function ($tempo) {
+                            $hari = (int) round(now()->startOfDay()->diffInDays($tempo->copy()->startOfDay(), false));
+                            if ($hari < 0)  return ['Lewat ' . abs($hari) . ' hari', 'badge-danger'];
+                            if ($hari === 0) return ['Hari ini', 'badge-danger'];
+                            return ['H-' . $hari, 'badge-warning'];
+                        };
+                    @endphp
+
+                    @if ($piutangJatuhTempo->isNotEmpty())
+                        <div class="mt-5">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-rose-600">Piutang (akan diterima dari pelanggan)</p>
+                            <ul class="mt-2 space-y-2">
+                                @foreach ($piutangJatuhTempo as $item)
+                                    @php [$badgeLabel, $badgeClass] = $tempoBadge($item->jatuh_tempo); @endphp
+                                    <li class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
+                                        <div class="min-w-0">
+                                            <a href="{{ route('transaksi.pembayaran-piutang.show', $item) }}" class="font-semibold text-slate-900 hover:underline">{{ $item->pelanggan->nama ?? 'Pelanggan Umum' }}</a>
+                                            <p class="mt-0.5 truncate text-xs text-slate-500">{{ $item->nomor_penjualan }} • {{ optional($item->jatuh_tempo)->translatedFormat('d M Y') }}</p>
+                                        </div>
+                                        <div class="shrink-0 text-right">
+                                            <p class="font-bold text-rose-700">Rp {{ number_format($item->sisa_piutang, 0, ',', '.') }}</p>
+                                            <span class="badge {{ $badgeClass }} mt-1">{{ $badgeLabel }}</span>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @if ($utangJatuhTempo->isNotEmpty())
+                        <div class="mt-5">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Utang (harus dibayar ke vendor)</p>
+                            <ul class="mt-2 space-y-2">
+                                @foreach ($utangJatuhTempo as $item)
+                                    @php [$badgeLabel, $badgeClass] = $tempoBadge($item->jatuh_tempo); @endphp
+                                    <li class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
+                                        <div class="min-w-0">
+                                            <a href="{{ route('transaksi.pembayaran-utang.show', $item) }}" class="font-semibold text-slate-900 hover:underline">{{ $item->vendor->nama ?? '-' }}</a>
+                                            <p class="mt-0.5 truncate text-xs text-slate-500">{{ $item->nomor_pembelian }} • {{ optional($item->jatuh_tempo)->translatedFormat('d M Y') }}</p>
+                                        </div>
+                                        <div class="shrink-0 text-right">
+                                            <p class="font-bold text-amber-700">Rp {{ number_format($item->sisa_utang, 0, ',', '.') }}</p>
+                                            <span class="badge {{ $badgeClass }} mt-1">{{ $badgeLabel }}</span>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                @endif
+            </div>
+
+            <div class="surface p-6">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
                         <h2 class="text-2xl font-extrabold text-slate-900">Peringatan Stok</h2>
                         <p class="mt-1 text-sm text-slate-500">Barang yang mendekati atau sudah melewati batas minimum.</p>
                     </div>

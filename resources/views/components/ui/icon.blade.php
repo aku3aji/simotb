@@ -147,6 +147,13 @@
         @case('chevron-down')
             <path d="m6 9 6 6 6-6" />
             @break
+        @case('chevron-up')
+            <path d="m18 15-6-6-6 6" />
+            @break
+        @case('chevrons-up-down')
+            <path d="m7 15 5 5 5-5" />
+            <path d="m7 9 5-5 5 5" />
+            @break
         @case('eye')
             <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
             <circle cx="12" cy="12" r="3" />

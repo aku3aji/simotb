@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Penjualan')
+@section('title', 'Stok Keluar')
 
 @section('content')
-    <x-ui.page-header title="Transaksi Penjualan" description="Catat transaksi tunai maupun kredit dengan ringkasan pembayaran yang jelas.">
-        <a href="{{ route('transaksi.penjualan.create') }}" class="btn btn-primary">
+    <x-ui.page-header title="Transaksi Stok Keluar" description="Catat transaksi tunai maupun kredit dengan ringkasan pembayaran yang jelas.">
+        <a href="{{ route('transaksi.stok-keluar.create') }}" class="btn btn-primary">
             <x-ui.icon name="plus" class="h-4 w-4" />
-            <span>Buat Penjualan</span>
+            <span>Buat Stok Keluar</span>
         </a>
     </x-ui.page-header>
 
@@ -29,7 +29,7 @@
             <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px_180px_180px_180px_auto_auto]">
                 <div class="relative">
                     <x-ui.icon name="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari nomor penjualan atau pelanggan">
+                    <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari nomor stok keluar atau pelanggan">
                 </div>
                 <select name="tipe_pembayaran" class="select-field">
                     <option value="">Semua tipe</option>
@@ -54,7 +54,7 @@
         </form>
 
         @if ($penjualan->isEmpty())
-            <x-ui.empty-state title="Belum ada penjualan" description="Transaksi penjualan akan muncul di sini setelah mulai mencatat nota." icon="shopping-cart" />
+            <x-ui.empty-state title="Belum ada stok keluar" description="Transaksi stok keluar akan muncul di sini setelah mulai mencatat nota." icon="shopping-cart" />
         @else
             <div class="overflow-x-auto">
                 <table class="data-table">
@@ -101,10 +101,10 @@
                                 </td>
                                 <td>
                                     <div class="flex justify-center gap-2">
-                                        <a href="{{ route('transaksi.penjualan.show', $item) }}" class="btn btn-secondary px-3 py-2">
+                                        <a href="{{ route('transaksi.stok-keluar.show', $item) }}" class="btn btn-secondary px-3 py-2">
                                             <x-ui.icon name="eye" class="h-4 w-4" />
                                         </a>
-                                        <a href="{{ route('transaksi.penjualan.edit', $item) }}" class="btn btn-secondary px-3 py-2">
+                                        <a href="{{ route('transaksi.stok-keluar.edit', $item) }}" class="btn btn-secondary px-3 py-2">
                                             <x-ui.icon name="pencil" class="h-4 w-4" />
                                         </a>
                                     </div>

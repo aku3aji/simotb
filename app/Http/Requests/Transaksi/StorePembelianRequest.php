@@ -4,7 +4,9 @@ namespace App\Http\Requests\Transaksi;
 
 use App\Http\Requests\BaseFormRequest;
 use App\Models\Barang;
+use App\Models\Pembelian;
 use App\Models\Vendor;
+use Illuminate\Validation\Rule;
 
 class StorePembelianRequest extends BaseFormRequest
 {
@@ -54,6 +56,9 @@ class StorePembelianRequest extends BaseFormRequest
         return [
             'vendor_id' => ['required', 'exists:vendor,id'],
             'tanggal' => ['required', 'date'],
+            'tipe_pembayaran' => ['required', Rule::in([Pembelian::TIPE_TUNAI, Pembelian::TIPE_KREDIT])],
+            'dibayar' => ['required', 'numeric', 'gte:0'],
+            'jatuh_tempo' => ['nullable', 'required_if:tipe_pembayaran,kredit', 'date', 'after_or_equal:tanggal'],
             'catatan' => ['nullable', 'string', 'max:1000'],
             'detail' => ['required', 'array', 'min:1'],
             'detail.*.barang_id' => ['required', 'distinct', 'exists:barang,id'],
@@ -67,6 +72,9 @@ class StorePembelianRequest extends BaseFormRequest
         return [
             'vendor_id' => 'vendor',
             'tanggal' => 'tanggal pembelian',
+            'tipe_pembayaran' => 'tipe pembayaran',
+            'dibayar' => 'jumlah dibayar',
+            'jatuh_tempo' => 'jatuh tempo',
             'catatan' => 'catatan',
             'detail' => 'detail pembelian',
             'detail.*.barang_id' => 'barang',

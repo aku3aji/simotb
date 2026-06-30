@@ -3,7 +3,7 @@
 @section('title', 'Laporan Piutang')
 
 @section('content')
-    <x-ui.page-header title="Laporan Piutang" description="Daftar penjualan kredit yang belum lunas, difilter berdasarkan jatuh tempo.">
+    <x-ui.page-header title="Laporan Piutang" description="Daftar stok keluar kredit yang belum lunas, difilter berdasarkan jatuh tempo.">
         <a href="{{ route('laporan.piutang', array_merge(request()->query(), ['export' => 'excel'])) }}" class="btn btn-secondary">
             <x-ui.icon name="file-spreadsheet" class="h-4 w-4" />
             <span>Export Excel</span>
@@ -14,13 +14,7 @@
         </a>
     </x-ui.page-header>
 
-    <div class="mb-6 flex gap-2 overflow-x-auto">
-        <a href="{{ route('laporan.stok') }}" class="btn {{ request()->routeIs('laporan.stok') ? 'btn-primary' : 'btn-secondary' }}">Stok</a>
-        <a href="{{ route('laporan.pembelian') }}" class="btn {{ request()->routeIs('laporan.pembelian') ? 'btn-primary' : 'btn-secondary' }}">Pembelian</a>
-        <a href="{{ route('laporan.penjualan') }}" class="btn {{ request()->routeIs('laporan.penjualan') ? 'btn-primary' : 'btn-secondary' }}">Penjualan</a>
-        <a href="{{ route('laporan.piutang') }}" class="btn {{ request()->routeIs('laporan.piutang') ? 'btn-primary' : 'btn-secondary' }}">Piutang</a>
-        <a href="{{ route('laporan.absensi') }}" class="btn {{ request()->routeIs('laporan.absensi') ? 'btn-primary' : 'btn-secondary' }}">Absensi</a>
-    </div>
+    @include('laporan.partials.nav')
 
     <section class="surface overflow-hidden">
         <form method="GET" class="border-b border-slate-200 px-5 py-4">
@@ -57,7 +51,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>No. Penjualan</th>
+                            <th>No. Stok Keluar</th>
                             <th>Pelanggan</th>
                             <th>Tgl. Transaksi</th>
                             <th>Jatuh Tempo</th>

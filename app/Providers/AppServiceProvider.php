@@ -39,13 +39,13 @@ class AppServiceProvider extends ServiceProvider
         $this->attachObserver(Penjualan::class, new ModelNotifikasiObserver(
             'Penjualan', 'shopping-cart', 'brand',
             fn ($m) => $m->nomor_penjualan,
-            fn ($m) => route('transaksi.penjualan.index'),
+            fn ($m) => route('transaksi.stok-keluar.index'),
         ));
 
         $this->attachObserver(Pembelian::class, new ModelNotifikasiObserver(
             'Pembelian', 'receipt', 'brand',
             fn ($m) => $m->nomor_pembelian,
-            fn ($m) => route('transaksi.pembelian.index'),
+            fn ($m) => route('transaksi.stok-masuk.index'),
         ));
 
         $this->attachObserver(Pelanggan::class, new ModelNotifikasiObserver(
@@ -99,7 +99,7 @@ class AppServiceProvider extends ServiceProvider
         $this->attachObserver(ReturPenjualan::class, new ModelNotifikasiObserver(
             'Retur Penjualan', 'rotate-ccw', 'danger',
             fn ($m) => $m->nomor_retur ?? ('Retur #' . $m->id),
-            fn ($m) => route('transaksi.retur-penjualan.index'),
+            fn ($m) => route('transaksi.retur-stok-keluar.index'),
         ));
 
         $this->attachObserver(PembayaranPiutang::class, new ModelNotifikasiObserver(

@@ -23,7 +23,8 @@
         .stat-value { font-size: 12.5px; font-weight: 700; color: #0f172a; margin-top: 3px; }
         .stat-box.red .stat-value { color: #b91c1c; }
 
-        table.data { width: 100%; border-collapse: collapse; }
+        table.data { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        table.data th, table.data td { word-wrap: break-word; overflow-wrap: break-word; }
         table.data thead th { background: #1e40af; color: #fff; padding: 7px 8px; text-align: left; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
         table.data tbody td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9.5px; color: #334155; vertical-align: middle; }
         table.data tbody tr:nth-child(even) td { background: #f8fafc; }
@@ -82,6 +83,10 @@
     </table>
 
     <table class="data">
+        <colgroup>
+            <col style="width:11%"><col style="width:22%"><col style="width:13%"><col style="width:12%"><col style="width:9%">
+            <col style="width:8%"><col style="width:9%"><col style="width:9%"><col style="width:7%">
+        </colgroup>
         <thead>
             <tr>
                 <th>Kode</th>

@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Penjualan')
+@section('title', 'Detail Stok Keluar')
 
 @section('content')
-    <x-ui.page-header title="Detail Penjualan" description="{{ $penjualan->nomor_penjualan }}">
+    <x-ui.page-header title="Detail Stok Keluar" description="{{ $penjualan->nomor_penjualan }}">
         <div class="flex gap-3">
-            <a href="{{ route('transaksi.penjualan.edit', $penjualan) }}" class="btn btn-secondary">
+            <a href="{{ route('transaksi.stok-keluar.edit', $penjualan) }}" class="btn btn-secondary">
                 <x-ui.icon name="pencil" class="h-4 w-4" />
                 <span>Edit</span>
             </a>
-            <a href="{{ route('transaksi.penjualan.index') }}" class="btn btn-secondary">Kembali</a>
+            <a href="{{ route('transaksi.stok-keluar.index') }}" class="btn btn-secondary">Kembali</a>
         </div>
     </x-ui.page-header>
 
@@ -20,7 +20,7 @@
                 <h2 class="text-lg font-bold text-slate-900">Informasi Transaksi</h2>
                 <dl class="mt-4 space-y-3 text-sm">
                     <div class="summary-item">
-                        <dt class="text-slate-500">Nomor Penjualan</dt>
+                        <dt class="text-slate-500">Nomor Stok Keluar</dt>
                         <dd class="font-mono font-semibold text-slate-900">{{ $penjualan->nomor_penjualan }}</dd>
                     </div>
                     <div class="summary-item">
@@ -70,7 +70,7 @@
                 <h2 class="text-lg font-bold text-slate-900">Ringkasan Tagihan</h2>
                 <dl class="mt-4 space-y-3 text-sm">
                     <div class="summary-item">
-                        <dt class="text-slate-500">Total Penjualan</dt>
+                        <dt class="text-slate-500">Total Stok Keluar</dt>
                         <dd class="font-semibold text-slate-900">Rp {{ number_format($penjualan->total, 0, ',', '.') }}</dd>
                     </div>
                     @if ($totalRetur > 0)
@@ -126,7 +126,7 @@
                         @foreach ($penjualan->returPenjualan as $retur)
                             <li class="px-5 py-3 text-sm">
                                 <div class="flex items-center justify-between">
-                                    <a href="{{ route('transaksi.retur-penjualan.show', $retur) }}" class="font-mono font-semibold text-brand-700 hover:underline">{{ $retur->nomor_retur }}</a>
+                                    <a href="{{ route('transaksi.retur-stok-keluar.show', $retur) }}" class="font-mono font-semibold text-brand-700 hover:underline">{{ $retur->nomor_retur }}</a>
                                     <span class="font-semibold text-rose-700">- Rp {{ number_format($retur->total_retur, 0, ',', '.') }}</span>
                                 </div>
                                 <p class="mt-0.5 text-xs text-slate-400">{{ optional($retur->tanggal)->translatedFormat('d M Y') }}</p>
@@ -140,7 +140,7 @@
         {{-- RIGHT: DETAIL ITEMS --}}
         <section class="surface overflow-hidden">
             <div class="border-b border-slate-200 px-5 py-4">
-                <h2 class="text-lg font-bold text-slate-900">Item Penjualan</h2>
+                <h2 class="text-lg font-bold text-slate-900">Item Stok Keluar</h2>
                 <p class="mt-1 text-sm text-slate-500">
                     {{ $penjualan->detail->count() }} item
                     @if ($totalRetur > 0)
@@ -150,7 +150,7 @@
             </div>
 
             @if ($penjualan->detail->isEmpty())
-                <x-ui.empty-state title="Tidak ada item" description="Tidak ada item penjualan yang tercatat." icon="shopping-cart" />
+                <x-ui.empty-state title="Tidak ada item" description="Tidak ada item stok keluar yang tercatat." icon="shopping-cart" />
             @else
                 <div class="overflow-x-auto">
                     <table class="data-table">
@@ -197,7 +197,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="border-t-2 border-slate-300">
-                                <td colspan="5" class="text-right font-semibold text-slate-600">Total Penjualan</td>
+                                <td colspan="5" class="text-right font-semibold text-slate-600">Total Stok Keluar</td>
                                 <td class="text-right font-bold text-slate-900">Rp {{ number_format($penjualan->total, 0, ',', '.') }}</td>
                             </tr>
                             @if ($totalRetur > 0)

@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Penjualan')
+@section('title', 'Edit Stok Keluar')
 
 @section('content')
-    <x-ui.page-header title="Edit Penjualan" description="Perbarui transaksi selama nota belum memiliki pembayaran piutang atau retur.">
-        <a href="{{ route('transaksi.penjualan.index') }}" class="btn btn-secondary">Kembali</a>
+    <x-ui.page-header title="Edit Stok Keluar" description="Perbarui transaksi selama nota belum memiliki pembayaran piutang atau retur.">
+        <a href="{{ route('transaksi.stok-keluar.index') }}" class="btn btn-secondary">Kembali</a>
     </x-ui.page-header>
 
     @include('partials.form-errors')
@@ -17,16 +17,16 @@
             <div class="flex items-start gap-3">
                 <x-ui.icon name="alert-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
                 <div class="text-sm">
-                    <p class="font-semibold text-rose-800">Penjualan ini memiliki {{ $penjualan->returPenjualan->count() }} retur (Total retur: Rp {{ number_format($totalRetur, 0, ',', '.') }})</p>
-                    <p class="mt-1 text-rose-700">Penjualan yang sudah memiliki retur tidak dapat diubah. Lihat detail di halaman <a href="{{ route('transaksi.penjualan.show', $penjualan) }}" class="underline font-medium">detail penjualan</a>.</p>
+                    <p class="font-semibold text-rose-800">Stok Keluar ini memiliki {{ $penjualan->returPenjualan->count() }} retur (Total retur: Rp {{ number_format($totalRetur, 0, ',', '.') }})</p>
+                    <p class="mt-1 text-rose-700">Stok Keluar yang sudah memiliki retur tidak dapat diubah. Lihat detail di halaman <a href="{{ route('transaksi.stok-keluar.show', $penjualan) }}" class="underline font-medium">detail stok keluar</a>.</p>
                 </div>
             </div>
         </div>
     @endif
 
-    <form method="POST" action="{{ route('transaksi.penjualan.update', $penjualan) }}">
+    <form method="POST" action="{{ route('transaksi.stok-keluar.update', $penjualan) }}">
         @csrf
         @method('PUT')
-        @include('transaksi.penjualan._form', ['submitLabel' => 'Update Penjualan'])
+        @include('transaksi.penjualan._form', ['submitLabel' => 'Update Stok Keluar'])
     </form>
 @endsection

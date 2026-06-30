@@ -160,7 +160,7 @@ class PenjualanController extends Controller
             }
         });
 
-        return redirect()->route('transaksi.penjualan.index')
+        return redirect()->route('transaksi.stok-keluar.index')
             ->with('success', 'Transaksi penjualan berhasil disimpan.');
     }
 
@@ -291,13 +291,13 @@ class PenjualanController extends Controller
             }
         });
 
-        return redirect()->route('transaksi.penjualan.index')
+        return redirect()->route('transaksi.stok-keluar.index')
             ->with('success', 'Transaksi penjualan berhasil diperbarui.');
     }
 
     public function destroy(Penjualan $penjualan): RedirectResponse
     {
-        return redirect()->route('transaksi.penjualan.index')
+        return redirect()->route('transaksi.stok-keluar.index')
             ->with('error', 'Transaksi penjualan yang sudah tersimpan tidak dapat dihapus.');
     }
 

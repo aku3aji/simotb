@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Retur Penjualan')
+@section('title', 'Detail Retur Stok Keluar')
 
 @section('content')
-    <x-ui.page-header title="Detail Retur Penjualan" description="{{ $returPenjualan->nomor_retur }}">
+    <x-ui.page-header title="Detail Retur Stok Keluar" description="{{ $returPenjualan->nomor_retur }}">
         <div class="flex gap-3">
-            <a href="{{ route('transaksi.retur-penjualan.edit', $returPenjualan) }}" class="btn btn-secondary">
+            <a href="{{ route('transaksi.retur-stok-keluar.edit', $returPenjualan) }}" class="btn btn-secondary">
                 <x-ui.icon name="pencil" class="h-4 w-4" />
                 <span>Edit</span>
             </a>
-            <a href="{{ route('transaksi.retur-penjualan.index') }}" class="btn btn-secondary">Kembali</a>
+            <a href="{{ route('transaksi.retur-stok-keluar.index') }}" class="btn btn-secondary">Kembali</a>
         </div>
     </x-ui.page-header>
 
@@ -44,7 +44,7 @@
                 <h2 class="text-lg font-bold text-slate-900">Transaksi Asal</h2>
                 <dl class="mt-4 space-y-3 text-sm">
                     <div class="summary-item">
-                        <dt class="text-slate-500">Nomor Penjualan</dt>
+                        <dt class="text-slate-500">Nomor Stok Keluar</dt>
                         <dd class="font-mono font-semibold text-slate-900">{{ $returPenjualan->penjualan->nomor_penjualan ?? '-' }}</dd>
                     </div>
                     <div class="summary-item">
@@ -57,8 +57,8 @@
                     </div>
                 </dl>
                 <div class="mt-4 border-t border-slate-200 pt-4">
-                    <a href="{{ route('transaksi.penjualan.edit', $returPenjualan->penjualan) }}" class="text-sm font-medium text-brand-700 hover:underline">
-                        Lihat transaksi penjualan →
+                    <a href="{{ route('transaksi.stok-keluar.edit', $returPenjualan->penjualan) }}" class="text-sm font-medium text-brand-700 hover:underline">
+                        Lihat transaksi stok keluar →
                     </a>
                 </div>
             </section>

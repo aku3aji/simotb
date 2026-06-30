@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Laporan;
 
 use App\Exports\AbsensiExport;
+use App\Exports\MutasiStokExport;
 use App\Exports\PembelianExport;
 use App\Exports\PenjualanExport;
 use App\Exports\PiutangExport;
 use App\Exports\StokExport;
+use App\Exports\StokOpnameExport;
 use App\Http\Controllers\Controller;
 use App\Models\Absensi;
 use App\Models\Barang;
@@ -14,6 +16,8 @@ use App\Models\Kategori;
 use App\Models\Pegawai;
 use App\Models\Pembelian;
 use App\Models\Penjualan;
+use App\Models\StokMutasi;
+use App\Models\StokOpname;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -167,6 +171,103 @@ class LaporanController extends Controller
 
         return view('laporan.piutang', compact(
             'piutang', 'totalPiutang', 'tanggalMulai', 'tanggalSelesai'
+        ));
+    }
+
+    public function mutasiStok(Request $request): mixed
+    {
+        $tanggalMulai = $request->string('tanggal_mulai')->trim()->toString();
+        $tanggalSelesai = $request->string('tanggal_selesai')->trim()->toString();
+        $tipe = $request->string('tipe')->trim()->toString();
+        $sumber = $request->string('sumber')->trim()->toString();
+
+        $allowedTipe = [StokMutasi::TIPE_MASUK, StokMutasi::TIPE_KELUAR, StokMutasi::TIPE_PENYESUAIAN];
+        $allowedSumber = [
+            StokMutasi::SUMBER_PEMBELIAN,
+            StokMutasi::SUMBER_PENJUALAN,
+            StokMutasi::SUMBER_RETUR_PENJUALAN,
+            StokMutasi::SUMBER_STOCK_OPNAME,
+            StokMutasi::SUMBER_MANUAL,
+        ];
+
+        if (!in_array($tipe, $allowedTipe)) {
+            $tipe = '';
+        }
+        if (!in_array($sumber, $allowedSumber)) {
+            $sumber = '';
+        }
+
+        $mutasi = StokMutasi::query()
+            ->with(['barang', 'user'])
+            ->when($tanggalMulai !== '', fn ($q) => $q->whereDate('created_at', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($q) => $q->whereDate('created_at', '<=', $tanggalSelesai))
+            ->when($tipe !== '', fn ($q) => $q->where('tipe', $tipe))
+            ->when($sumber !== '', fn ($q) => $q->where('sumber', $sumber))
+            ->latest('id')
+            ->get();
+
+        $totalMasuk = (int) $mutasi->where('tipe', StokMutasi::TIPE_MASUK)->sum('jumlah');
+        $totalKeluar = (int) $mutasi->where('tipe', StokMutasi::TIPE_KELUAR)->sum('jumlah');
+
+        $export = $request->query('export');
+
+        if ($export === 'pdf') {
+            $pdf = Pdf::loadView('laporan.pdf.mutasi-stok', compact(
+                'mutasi', 'totalMasuk', 'totalKeluar', 'tanggalMulai', 'tanggalSelesai', 'tipe', 'sumber'
+            ))->setPaper('a4', 'landscape');
+
+            return $pdf->download('laporan-mutasi-stok-' . now()->format('Ymd') . '.pdf');
+        }
+
+        if ($export === 'excel') {
+            return Excel::download(
+                new MutasiStokExport($tanggalMulai, $tanggalSelesai, $tipe, $sumber),
+                'laporan-mutasi-stok-' . now()->format('Ymd') . '.xlsx'
+            );
+        }
+
+        return view('laporan.mutasi-stok', compact(
+            'mutasi', 'totalMasuk', 'totalKeluar', 'tanggalMulai', 'tanggalSelesai', 'tipe', 'sumber'
+        ));
+    }
+
+    public function stokOpname(Request $request): mixed
+    {
+        $tanggalMulai = $request->string('tanggal_mulai')->trim()->toString();
+        $tanggalSelesai = $request->string('tanggal_selesai')->trim()->toString();
+
+        $opname = StokOpname::query()
+            ->with('user')
+            ->withCount('detail')
+            ->withSum('detail', 'selisih')
+            ->when($tanggalMulai !== '', fn ($q) => $q->where('tanggal', '>=', $tanggalMulai))
+            ->when($tanggalSelesai !== '', fn ($q) => $q->where('tanggal', '<=', $tanggalSelesai))
+            ->latest('tanggal')
+            ->latest('id')
+            ->get();
+
+        $totalSesi = $opname->count();
+        $totalItem = (int) $opname->sum('detail_count');
+
+        $export = $request->query('export');
+
+        if ($export === 'pdf') {
+            $pdf = Pdf::loadView('laporan.pdf.stok-opname', compact(
+                'opname', 'totalSesi', 'totalItem', 'tanggalMulai', 'tanggalSelesai'
+            ))->setPaper('a4', 'landscape');
+
+            return $pdf->download('laporan-stok-opname-' . now()->format('Ymd') . '.pdf');
+        }
+
+        if ($export === 'excel') {
+            return Excel::download(
+                new StokOpnameExport($tanggalMulai, $tanggalSelesai),
+                'laporan-stok-opname-' . now()->format('Ymd') . '.xlsx'
+            );
+        }
+
+        return view('laporan.stok-opname', compact(
+            'opname', 'totalSesi', 'totalItem', 'tanggalMulai', 'tanggalSelesai'
         ));
     }
 

@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Retur Penjualan')
+@section('title', 'Retur Stok Keluar')
 
 @section('content')
-    <x-ui.page-header title="Retur Penjualan" description="Catat barang yang dikembalikan pelanggan dan sesuaikan stok sesuai kondisinya.">
-        <a href="{{ route('transaksi.retur-penjualan.create') }}" class="btn btn-primary">
+    <x-ui.page-header title="Retur Stok Keluar" description="Catat barang yang dikembalikan pelanggan dan sesuaikan stok sesuai kondisinya.">
+        <a href="{{ route('transaksi.retur-stok-keluar.create') }}" class="btn btn-primary">
             <x-ui.icon name="plus" class="h-4 w-4" />
             <span>Buat Retur</span>
         </a>
@@ -15,7 +15,7 @@
             <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto_auto]">
                 <div class="relative">
                     <x-ui.icon name="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari nomor retur, nomor penjualan, atau pelanggan">
+                    <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari nomor retur, nomor stok keluar, atau pelanggan">
                 </div>
                 <input type="date" name="tanggal_mulai" value="{{ $tanggalMulai }}" class="input-field">
                 <input type="date" name="tanggal_selesai" value="{{ $tanggalSelesai }}" class="input-field">
@@ -29,14 +29,14 @@
         </form>
 
         @if ($returPenjualan->isEmpty())
-            <x-ui.empty-state title="Belum ada retur penjualan" description="Retur akan muncul di sini setelah pelanggan mengembalikan barang." icon="rotate-ccw" />
+            <x-ui.empty-state title="Belum ada retur stok keluar" description="Retur akan muncul di sini setelah pelanggan mengembalikan barang." icon="rotate-ccw" />
         @else
             <div class="overflow-x-auto">
                 <table class="data-table">
                     <thead>
                         <tr>
                             <x-ui.sortable-th column="nomor_retur" label="Nomor Retur" :sort-by="$sortBy" :sort-dir="$sortDir" />
-                            <th>Penjualan</th>
+                            <th>Stok Keluar</th>
                             <th>Pelanggan</th>
                             <x-ui.sortable-th column="tanggal" label="Tanggal" :sort-by="$sortBy" :sort-dir="$sortDir" />
                             <th>Total Retur</th>
@@ -53,13 +53,13 @@
                                 <td class="font-semibold text-slate-900">Rp {{ number_format($item->total_retur, 0, ',', '.') }}</td>
                                 <td>
                                     <div class="flex justify-center gap-2">
-                                        <a href="{{ route('transaksi.retur-penjualan.show', $item) }}" class="btn btn-secondary px-3 py-2">
+                                        <a href="{{ route('transaksi.retur-stok-keluar.show', $item) }}" class="btn btn-secondary px-3 py-2">
                                             <x-ui.icon name="eye" class="h-4 w-4" />
                                         </a>
-                                        <a href="{{ route('transaksi.retur-penjualan.edit', $item) }}" class="btn btn-secondary px-3 py-2">
+                                        <a href="{{ route('transaksi.retur-stok-keluar.edit', $item) }}" class="btn btn-secondary px-3 py-2">
                                             <x-ui.icon name="pencil" class="h-4 w-4" />
                                         </a>
-                                        <form method="POST" action="{{ route('transaksi.retur-penjualan.destroy', $item) }}" data-confirm="Hapus retur penjualan '{{ $item->nomor_retur }}'?">
+                                        <form method="POST" action="{{ route('transaksi.retur-stok-keluar.destroy', $item) }}" data-confirm="Hapus retur stok keluar '{{ $item->nomor_retur }}'?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger px-3 py-2">

@@ -28,7 +28,7 @@
     <section class="surface p-6">
         <div class="grid gap-6 lg:grid-cols-3">
             <div>
-                <label class="label-text" for="nomor_pembelian">Nomor Pembelian</label>
+                <label class="label-text" for="nomor_pembelian">Nomor Stok Masuk</label>
                 <input id="nomor_pembelian" name="nomor_pembelian" type="text"
                     value="{{ $nomorValue }}"
                     class="input-field {{ !$isEdit ? 'bg-slate-100' : '' }}"
@@ -60,18 +60,14 @@
                     value="{{ old('tanggal', isset($pembelian->tanggal) ? $pembelian->tanggal->format('Y-m-d') : now()->format('Y-m-d')) }}"
                     class="input-field" required>
             </div>
-            <div class="lg:col-span-3">
-                <label class="label-text" for="catatan">Catatan</label>
-                <textarea id="catatan" name="catatan" class="textarea-field" placeholder="Catatan tambahan pembelian">{{ old('catatan', $pembelian->catatan ?? '') }}</textarea>
-            </div>
         </div>
     </section>
 
-    <div class="grid gap-6 2xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
+    <div class="grid gap-6 2xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
         <section class="surface">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-900">Item Pembelian</h2>
+                    <h2 class="text-lg font-bold text-slate-900">Item Stok Masuk</h2>
                     <p class="mt-1 text-sm text-slate-500">Tambahkan barang yang dibeli dari vendor, lalu isi jumlah dan harga beli.</p>
                 </div>
                 <button type="button" class="btn btn-secondary" data-pembelian-add>
@@ -83,18 +79,65 @@
             <div class="space-y-4 px-5 py-5" data-pembelian-rows></div>
         </section>
 
-        <aside class="surface p-6">
-            <h3 class="text-lg font-bold text-slate-900">Ringkasan Pembelian</h3>
-            <p class="mt-2 text-sm text-slate-500">Total dihitung otomatis dari seluruh detail barang yang Anda masukkan.</p>
+        <aside class="surface p-6 2xl:sticky 2xl:top-24 2xl:self-start">
+            <h3 class="text-2xl font-extrabold text-slate-900">Ringkasan Pembayaran</h3>
+
+            <div class="mt-6">
+                <p class="label-text">Metode Pembayaran</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="cursor-pointer rounded-md border px-4 py-3 text-center text-sm font-semibold transition has-[:checked]:border-brand-700 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-700">
+                        <input type="radio" name="tipe_pembayaran" value="tunai" class="sr-only" {{ old('tipe_pembayaran', $pembelian->tipe_pembayaran ?? 'tunai') === 'tunai' ? 'checked' : '' }}>
+                        Tunai
+                    </label>
+                    <label class="cursor-pointer rounded-md border px-4 py-3 text-center text-sm font-semibold transition has-[:checked]:border-brand-700 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-700">
+                        <input type="radio" name="tipe_pembayaran" value="kredit" class="sr-only" {{ old('tipe_pembayaran', $pembelian->tipe_pembayaran ?? '') === 'kredit' ? 'checked' : '' }}>
+                        Kredit
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-6 space-y-4">
+                <div class="summary-item">
+                    <span class="text-slate-500">Subtotal</span>
+                    <span class="font-semibold text-slate-900" data-pembelian-subtotal>Rp 0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="text-slate-500">Jumlah Item</span>
+                    <span class="font-semibold text-slate-900" data-pembelian-item-count>0</span>
+                </div>
+            </div>
 
             <div class="mt-6 rounded-lg border border-brand-200 bg-brand-50 p-5">
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">Total Pembelian</p>
-                <p class="mt-3 text-3xl font-extrabold text-brand-800" data-pembelian-total>Rp 0</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">Total Stok Masuk</p>
+                <p class="mt-3 text-4xl font-extrabold text-brand-800" data-pembelian-total>Rp 0</p>
+            </div>
+
+            <div class="mt-6 space-y-4">
+                <div>
+                    <label class="label-text" for="dibayar">Jumlah Dibayar</label>
+                    <input id="dibayar" name="dibayar" type="number" min="0" step="500"
+                        value="{{ old('dibayar', $pembelian->dibayar ?? 0) }}"
+                        class="input-field" data-pembelian-dibayar required>
+                </div>
+                <div data-pembelian-jatuh-tempo-wrap>
+                    <label class="label-text" for="jatuh_tempo">Jatuh Tempo</label>
+                    <input id="jatuh_tempo" name="jatuh_tempo" type="date"
+                        value="{{ old('jatuh_tempo', isset($pembelian->jatuh_tempo) ? $pembelian->jatuh_tempo->format('Y-m-d') : '') }}"
+                        class="input-field" data-pembelian-jatuh-tempo>
+                </div>
+                <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-rose-700">Sisa Utang</p>
+                    <p class="mt-2 text-2xl font-extrabold text-rose-800" data-pembelian-sisa>Rp 0</p>
+                </div>
+                <div>
+                    <label class="label-text" for="catatan">Catatan</label>
+                    <textarea id="catatan" name="catatan" class="textarea-field" placeholder="Catatan tambahan stok masuk">{{ old('catatan', $pembelian->catatan ?? '') }}</textarea>
+                </div>
             </div>
 
             <div class="mt-6 flex flex-wrap gap-3">
-                <button type="submit" class="btn btn-primary">{{ $submitLabel }}</button>
-                <a href="{{ route('transaksi.pembelian.index') }}" class="btn btn-secondary">Batal</a>
+                <button type="submit" class="btn btn-primary w-full justify-center">{{ $submitLabel }}</button>
+                <a href="{{ route('transaksi.stok-masuk.index') }}" class="btn btn-secondary w-full justify-center">Batal</a>
             </div>
         </aside>
     </div>
@@ -106,9 +149,16 @@
             document.addEventListener('DOMContentLoaded', function () {
                 const barangOptions = @json($barangOptions);
                 let rows = @json($detailItems);
-                const totalEl = document.querySelector('[data-pembelian-total]');
+
                 const rowsEl = document.querySelector('[data-pembelian-rows]');
                 const addButton = document.querySelector('[data-pembelian-add]');
+                const subtotalEl = document.querySelector('[data-pembelian-subtotal]');
+                const totalEl = document.querySelector('[data-pembelian-total]');
+                const sisaEl = document.querySelector('[data-pembelian-sisa]');
+                const countEl = document.querySelector('[data-pembelian-item-count]');
+                const dibayarInput = document.querySelector('[data-pembelian-dibayar]');
+                const jatuhTempoWrap = document.querySelector('[data-pembelian-jatuh-tempo-wrap]');
+                const jatuhTempoInput = document.querySelector('[data-pembelian-jatuh-tempo]');
 
                 // Vendor inline
                 const vendorSelect = document.getElementById('vendor_id');
@@ -117,7 +167,31 @@
                     vendorBaruWrap.classList.toggle('hidden', this.value !== '__new__');
                 });
 
-                const formatRupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value || 0));
+                const formatRupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+                const currentType = () => document.querySelector('input[name="tipe_pembayaran"]:checked')?.value || 'tunai';
+
+                const syncSummary = () => {
+                    const total = rows.reduce((sum, row) => sum + (Number(row.jumlah || 0) * Number(row.harga_beli || 0)), 0);
+                    const jumlahItem = rows.reduce((sum, row) => sum + Number(row.jumlah || 0), 0);
+
+                    if (currentType() === 'tunai') {
+                        dibayarInput.value = total;
+                        dibayarInput.readOnly = true;
+                        jatuhTempoWrap.classList.add('hidden');
+                        jatuhTempoInput.value = '';
+                    } else {
+                        dibayarInput.readOnly = false;
+                        jatuhTempoWrap.classList.remove('hidden');
+                    }
+
+                    const dibayar = Number(dibayarInput.value || 0);
+                    const sisa = Math.max(total - dibayar, 0);
+
+                    subtotalEl.textContent = formatRupiah(total);
+                    totalEl.textContent = formatRupiah(total);
+                    sisaEl.textContent = formatRupiah(sisa);
+                    countEl.textContent = `${jumlahItem} qty`;
+                };
 
                 const initTomSelects = () => {
                     rowsEl.querySelectorAll('select[data-pembelian-field="barang_id"]').forEach(sel => {
@@ -132,13 +206,12 @@
                 };
 
                 const render = () => {
-                    const total = rows.reduce((sum, row) => sum + (Number(row.jumlah || 0) * Number(row.harga_beli || 0)), 0);
-                    totalEl.textContent = `Rp ${formatRupiah(total)}`;
-
                     rowsEl.innerHTML = rows.map((row, index) => {
                         const isNew = String(row.barang_id ?? '') === '__new__';
                         const selected = isNew ? null : barangOptions.find(item => String(item.id) === String(row.barang_id ?? ''));
-                        const subtotal = Number(row.jumlah || 0) * Number(row.harga_beli || 0);
+                        const jumlah = Number(row.jumlah || 0);
+                        const harga = Number(row.harga_beli || (selected ? selected.harga_beli : 0));
+                        const subtotal = jumlah * harga;
 
                         const barangSelectOptions = barangOptions.map(item => `
                             <option value="${item.id}" ${String(row.barang_id ?? '') === String(item.id) ? 'selected' : ''}>
@@ -162,7 +235,7 @@
 
                         return `
                             <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-                                <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_140px_180px_180px_auto] 2xl:grid-cols-[minmax(0,1.35fr)_96px_140px_140px_auto]">
+                                <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_120px_180px_180px_auto] 2xl:grid-cols-[minmax(0,1.35fr)_96px_140px_140px_auto]">
                                     <div>
                                         <label class="label-text">Barang</label>
                                         <select name="detail[${index}][barang_id]" class="select-field" data-pembelian-field="barang_id" data-index="${index}" required>
@@ -180,7 +253,7 @@
                                     </div>
                                     <div class="flex flex-col">
                                         <label class="label-text">Subtotal</label>
-                                        <input type="text" value="Rp ${formatRupiah(subtotal)}" class="input-field flex-1 bg-slate-100 font-semibold text-slate-900" readonly data-pembelian-subtotal="${index}">
+                                        <input type="text" value="${formatRupiah(subtotal)}" class="input-field flex-1 bg-slate-100 font-semibold text-slate-900" readonly data-pembelian-row-subtotal="${index}">
                                     </div>
                                     <div class="flex flex-col">
                                         <label class="label-text invisible">Del</label>
@@ -196,28 +269,31 @@
                     }).join('');
 
                     initTomSelects();
+                    syncSummary();
                 };
 
                 rowsEl.addEventListener('input', function (event) {
                     const field = event.target.getAttribute('data-pembelian-field');
-                    const index = parseInt(event.target.getAttribute('data-index'));
-                    if (!field || isNaN(index)) return;
+                    const index = event.target.getAttribute('data-index');
 
-                    rows[index][field] = event.target.value;
+                    if (field && index !== null) {
+                        rows[index][field] = event.target.value;
 
-                    if (field === 'jumlah' || field === 'harga_beli') {
-                        const row = rows[index];
-                        const subtotal = Number(row.jumlah || 0) * Number(row.harga_beli || 0);
-                        const subtotalEl = rowsEl.querySelector(`[data-pembelian-subtotal="${index}"]`);
-                        if (subtotalEl) subtotalEl.value = `Rp ${formatRupiah(subtotal)}`;
-                        const total = rows.reduce((sum, r) => sum + (Number(r.jumlah || 0) * Number(r.harga_beli || 0)), 0);
-                        totalEl.textContent = `Rp ${formatRupiah(total)}`;
+                        if (field === 'jumlah' || field === 'harga_beli') {
+                            const row = rows[index];
+                            const subtotal = Number(row.jumlah || 0) * Number(row.harga_beli || 0);
+                            const el = rowsEl.querySelector(`[data-pembelian-row-subtotal="${index}"]`);
+                            if (el) el.value = formatRupiah(subtotal);
+                        }
+
+                        syncSummary();
                     }
                 });
 
                 rowsEl.addEventListener('change', function (event) {
                     const field = event.target.getAttribute('data-pembelian-field');
                     const index = event.target.getAttribute('data-index');
+
                     if (field && index !== null) {
                         rows[index][field] = event.target.value;
 
@@ -234,7 +310,7 @@
                             return;
                         }
 
-                        render();
+                        syncSummary();
                     }
                 });
 
@@ -256,6 +332,12 @@
                     rows.push({ barang_id: '', jumlah: 1, harga_beli: '', barang_nama_baru: '' });
                     render();
                 });
+
+                document.querySelectorAll('input[name="tipe_pembayaran"]').forEach((radio) => {
+                    radio.addEventListener('change', syncSummary);
+                });
+
+                dibayarInput.addEventListener('input', syncSummary);
 
                 render();
             });

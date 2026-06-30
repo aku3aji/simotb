@@ -19,6 +19,7 @@ use App\Http\Controllers\Pegawai\AbsensiController;
 use App\Http\Controllers\Pegawai\PegawaiController;
 use App\Http\Controllers\Pengguna\UserController;
 use App\Http\Controllers\Transaksi\PembayaranPiutangController;
+use App\Http\Controllers\Transaksi\PembayaranUtangController;
 use App\Http\Controllers\Transaksi\PembelianController;
 use App\Http\Controllers\Transaksi\PenjualanController;
 use App\Http\Controllers\Transaksi\ReturPenjualanController;
@@ -88,19 +89,28 @@ Route::middleware('auth')->group(function () {
     Route::prefix('transaksi')
         ->as('transaksi.')
         ->group(function () {
-            Route::resource('pembelian', PembelianController::class)
-                ->only(['index', 'create', 'store', 'edit', 'update']);
+            Route::resource('stok-masuk', PembelianController::class)
+                ->only(['index', 'create', 'store', 'show', 'edit', 'update'])
+                ->parameters(['stok-masuk' => 'pembelian']);
 
-            Route::resource('penjualan', PenjualanController::class)
-                ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+            Route::resource('stok-keluar', PenjualanController::class)
+                ->only(['index', 'create', 'store', 'show', 'edit', 'update'])
+                ->parameters(['stok-keluar' => 'penjualan']);
 
             Route::delete('pembayaran-piutang/bulk-destroy', [PembayaranPiutangController::class, 'destroyBulk'])->name('pembayaran-piutang.bulk-destroy');
             Route::get('pembayaran-piutang/{penjualan}/riwayat', [PembayaranPiutangController::class, 'show'])->name('pembayaran-piutang.show');
             Route::resource('pembayaran-piutang', PembayaranPiutangController::class)
                 ->except(['show']);
 
-            Route::resource('retur-penjualan', ReturPenjualanController::class)
-                ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+            Route::delete('pembayaran-utang/bulk-destroy', [PembayaranUtangController::class, 'destroyBulk'])->name('pembayaran-utang.bulk-destroy');
+            Route::get('pembayaran-utang/{pembelian}/riwayat', [PembayaranUtangController::class, 'show'])->name('pembayaran-utang.show');
+            Route::resource('pembayaran-utang', PembayaranUtangController::class)
+                ->except(['show'])
+                ->parameters(['pembayaran-utang' => 'pembayaranUtang']);
+
+            Route::resource('retur-stok-keluar', ReturPenjualanController::class)
+                ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
+                ->parameters(['retur-stok-keluar' => 'returPenjualan']);
         });
 
     Route::middleware('owner')
@@ -112,7 +122,7 @@ Route::middleware('auth')->group(function () {
             Route::get('absensi/catat-massal', [AbsensiController::class, 'cataMassal'])->name('absensi.catat-massal');
             Route::post('absensi/catat-massal', [AbsensiController::class, 'storeMassal'])->name('absensi.store-massal');
             Route::delete('absensi/bulk-destroy', [AbsensiController::class, 'destroyBulk'])->name('absensi.bulk-destroy');
-            Route::resource('absensi', AbsensiController::class)->except(['show']);
+            Route::resource('absensi', AbsensiController::class)->except(['show', 'create', 'store']);
         });
 
     Route::middleware('owner')
@@ -128,9 +138,11 @@ Route::middleware('auth')->group(function () {
         ->as('laporan.')
         ->group(function () {
             Route::get('stok', [LaporanController::class, 'stok'])->name('stok');
-            Route::get('pembelian', [LaporanController::class, 'pembelian'])->name('pembelian');
-            Route::get('penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
+            Route::get('stok-masuk', [LaporanController::class, 'pembelian'])->name('stok-masuk');
+            Route::get('stok-keluar', [LaporanController::class, 'penjualan'])->name('stok-keluar');
             Route::get('piutang', [LaporanController::class, 'piutang'])->name('piutang');
+            Route::get('mutasi-stok', [LaporanController::class, 'mutasiStok'])->name('mutasi-stok');
+            Route::get('stok-opname', [LaporanController::class, 'stokOpname'])->name('stok-opname');
             Route::get('absensi', [LaporanController::class, 'absensi'])->name('absensi');
         });
 });

@@ -37,9 +37,9 @@
                 @endif
             </div>
             <div>
-                <label class="label-text" for="penjualan_id">Transaksi Penjualan</label>
+                <label class="label-text" for="penjualan_id">Transaksi Stok Keluar</label>
                 <select id="penjualan_id" name="penjualan_id" class="select-field" required data-retur-penjualan>
-                    <option value="">Pilih transaksi penjualan</option>
+                    <option value="">Pilih transaksi stok keluar</option>
                     @foreach ($penjualanList as $item)
                         <option value="{{ $item->id }}" @selected(old('penjualan_id', $returPenjualan->penjualan_id ?? '') == $item->id)>
                             {{ $item->nomor_penjualan }} - {{ $item->pelanggan->nama ?? 'Pelanggan Umum' }}
@@ -102,7 +102,7 @@
 
                 <div class="mt-6 flex flex-wrap gap-3">
                     <button type="submit" class="btn btn-primary w-full justify-center">{{ $submitLabel }}</button>
-                    <a href="{{ route('transaksi.retur-penjualan.index') }}" class="btn btn-secondary w-full justify-center">Batal</a>
+                    <a href="{{ route('transaksi.retur-stok-keluar.index') }}" class="btn btn-secondary w-full justify-center">Batal</a>
                 </div>
             </section>
         </aside>
@@ -219,7 +219,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <p class="hint-text mt-2">${selected ? `Terjual ${selected.jumlah} • Harga jual ${formatRupiah(selected.harga_jual)} • Maks. retur ${selected.jumlah}` : 'Pilih transaksi penjualan terlebih dahulu.'}</p>
+                                <p class="hint-text mt-2">${selected ? `Terjual ${selected.jumlah} • Harga jual ${formatRupiah(selected.harga_jual)} • Maks. retur ${selected.jumlah}` : 'Pilih transaksi stok keluar terlebih dahulu.'}</p>
                                 <div class="mt-4 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm">
                                     <div class="flex items-center justify-between">
                                         <span class="text-slate-500">Subtotal retur</span>

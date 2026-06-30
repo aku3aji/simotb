@@ -25,7 +25,8 @@
         .stat-box.green .stat-value { color: #15803d; }
         .stat-box.amber .stat-value { color: #b45309; }
 
-        table.data { width: 100%; border-collapse: collapse; }
+        table.data { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        table.data th, table.data td { word-wrap: break-word; overflow-wrap: break-word; }
         table.data thead th { background: #1e40af; color: #fff; padding: 7px 8px; text-align: left; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
         table.data tbody td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9.5px; color: #334155; vertical-align: middle; }
         table.data tbody tr:nth-child(even) td { background: #f8fafc; }
@@ -48,7 +49,7 @@
     </div>
 
     <div class="doc-info">
-        <h2>Laporan Penjualan</h2>
+        <h2>Laporan Stok Keluar</h2>
         <p>Dicetak pada {{ now()->translatedFormat('d F Y, H:i') }}
             @if ($tanggalMulai || $tanggalSelesai)
                 &nbsp;&mdash;&nbsp;Periode:
@@ -72,7 +73,7 @@
             </td>
             <td width="25%">
                 <div class="stat-box">
-                    <div class="stat-label">Total Penjualan</div>
+                    <div class="stat-label">Total Stok Keluar</div>
                     <div class="stat-value">Rp {{ number_format($totalPenjualan, 0, ',', '.') }}</div>
                 </div>
             </td>
@@ -92,6 +93,10 @@
     </table>
 
     <table class="data">
+        <colgroup>
+            <col style="width:14%"><col style="width:18%"><col style="width:11%"><col style="width:9%">
+            <col style="width:13%"><col style="width:12%"><col style="width:13%"><col style="width:10%">
+        </colgroup>
         <thead>
             <tr>
                 <th>Nomor</th>

@@ -76,6 +76,29 @@ class DashboardController extends Controller
             $chartValuesPiutang[]   = (float) ($chartPiutang->get($date)?->total ?? 0);
         }
 
+        // Pengingat jatuh tempo: overdue + jatuh tempo dalam 7 hari ke depan.
+        $ambangTempo = now()->addDays(7)->toDateString();
+
+        $piutangJatuhTempo = Penjualan::query()
+            ->with('pelanggan')
+            ->kredit()
+            ->belumLunas()
+            ->whereNotNull('jatuh_tempo')
+            ->whereDate('jatuh_tempo', '<=', $ambangTempo)
+            ->orderBy('jatuh_tempo')
+            ->limit(8)
+            ->get();
+
+        $utangJatuhTempo = Pembelian::query()
+            ->with('vendor')
+            ->kredit()
+            ->belumLunas()
+            ->whereNotNull('jatuh_tempo')
+            ->whereDate('jatuh_tempo', '<=', $ambangTempo)
+            ->orderBy('jatuh_tempo')
+            ->limit(8)
+            ->get();
+
         $penjualanTerbaru = Penjualan::query()
             ->with(['pelanggan', 'user'])
             ->latest('tanggal')
@@ -98,6 +121,8 @@ class DashboardController extends Controller
             'totalReturBulanIni',
             'stokMenipis',
             'totalPiutang',
+            'piutangJatuhTempo',
+            'utangJatuhTempo',
             'penjualanTerbaru',
             'barangMenipis',
             'chartLabels',

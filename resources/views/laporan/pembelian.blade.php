@@ -1,26 +1,20 @@
 @extends('layouts.app')
 
-@section('title', 'Laporan Pembelian')
+@section('title', 'Laporan Stok Masuk')
 
 @section('content')
-    <x-ui.page-header title="Laporan Pembelian" description="Rekap transaksi pembelian barang dari vendor dalam periode tertentu.">
-        <a href="{{ route('laporan.pembelian', array_merge(request()->query(), ['export' => 'excel'])) }}" class="btn btn-secondary">
+    <x-ui.page-header title="Laporan Stok Masuk" description="Rekap transaksi stok masuk barang dari vendor dalam periode tertentu.">
+        <a href="{{ route('laporan.stok-masuk', array_merge(request()->query(), ['export' => 'excel'])) }}" class="btn btn-secondary">
             <x-ui.icon name="file-spreadsheet" class="h-4 w-4" />
             <span>Export Excel</span>
         </a>
-        <a href="{{ route('laporan.pembelian', array_merge(request()->query(), ['export' => 'pdf'])) }}" class="btn btn-primary">
+        <a href="{{ route('laporan.stok-masuk', array_merge(request()->query(), ['export' => 'pdf'])) }}" class="btn btn-primary">
             <x-ui.icon name="file-text" class="h-4 w-4" />
             <span>Export PDF</span>
         </a>
     </x-ui.page-header>
 
-    <div class="mb-6 flex gap-2 overflow-x-auto">
-        <a href="{{ route('laporan.stok') }}" class="btn {{ request()->routeIs('laporan.stok') ? 'btn-primary' : 'btn-secondary' }}">Stok</a>
-        <a href="{{ route('laporan.pembelian') }}" class="btn {{ request()->routeIs('laporan.pembelian') ? 'btn-primary' : 'btn-secondary' }}">Pembelian</a>
-        <a href="{{ route('laporan.penjualan') }}" class="btn {{ request()->routeIs('laporan.penjualan') ? 'btn-primary' : 'btn-secondary' }}">Penjualan</a>
-        <a href="{{ route('laporan.piutang') }}" class="btn {{ request()->routeIs('laporan.piutang') ? 'btn-primary' : 'btn-secondary' }}">Piutang</a>
-        <a href="{{ route('laporan.absensi') }}" class="btn {{ request()->routeIs('laporan.absensi') ? 'btn-primary' : 'btn-secondary' }}">Absensi</a>
-    </div>
+    @include('laporan.partials.nav')
 
     <section class="surface overflow-hidden">
         <form method="GET" class="border-b border-slate-200 px-5 py-4">
@@ -32,7 +26,7 @@
         </form>
 
         @if ($pembelian->isEmpty())
-            <x-ui.empty-state title="Belum ada data pembelian" description="Tidak ada transaksi pembelian dalam periode yang dipilih." icon="receipt" />
+            <x-ui.empty-state title="Belum ada data stok masuk" description="Tidak ada transaksi stok masuk dalam periode yang dipilih." icon="receipt" />
         @else
             {{-- Ringkasan --}}
             <div class="border-b border-slate-200 bg-slate-50/60 px-5 py-4">
@@ -42,7 +36,7 @@
                         <p class="mt-1 text-2xl font-bold text-slate-900">{{ $pembelian->count() }}</p>
                     </div>
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Pembelian</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Stok Masuk</p>
                         <p class="mt-1 text-2xl font-bold text-slate-900">Rp {{ number_format($totalPembelian, 0, ',', '.') }}</p>
                     </div>
                 </div>

@@ -35,6 +35,21 @@
         </div>
     </div>
 
+    {{-- Modal konfirmasi (menggantikan window.confirm bawaan) --}}
+    <div data-confirm-modal class="fixed inset-0 z-[60] hidden items-center justify-center p-4">
+        <div data-confirm-overlay class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm"></div>
+        <div class="surface relative z-10 w-full max-w-md p-6 text-center" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                <x-ui.icon name="alert-triangle" class="h-7 w-7" />
+            </div>
+            <h3 id="confirm-modal-title" data-confirm-title class="mt-4 text-lg font-bold text-slate-900">Konfirmasi Tindakan</h3>
+            <p data-confirm-message class="mt-2 text-sm text-slate-600"></p>
+            <div class="mt-6 flex justify-center gap-3">
+                <button type="button" data-confirm-cancel class="btn btn-secondary px-5">Batal</button>
+                <button type="button" data-confirm-accept class="btn btn-danger px-5">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -57,11 +72,46 @@
             closeButton?.addEventListener('click', closeSidebar);
             overlay?.addEventListener('click', closeSidebar);
 
-            // ── Confirm (native browser dialog) ───────────────────────
+            // ── Confirm (modal card) ──────────────────────────────────
+            const confirmModal   = document.querySelector('[data-confirm-modal]');
+            const confirmMessage = confirmModal?.querySelector('[data-confirm-message]');
+            const confirmTitle   = confirmModal?.querySelector('[data-confirm-title]');
+            const confirmAccept  = confirmModal?.querySelector('[data-confirm-accept]');
+            const confirmCancel  = confirmModal?.querySelector('[data-confirm-cancel]');
+            const confirmOverlay = confirmModal?.querySelector('[data-confirm-overlay]');
+            const defaultConfirmTitle = confirmTitle?.textContent ?? 'Konfirmasi Tindakan';
+            let pendingForm = null;
+
+            const openConfirm = (form) => {
+                pendingForm = form;
+                if (confirmMessage) confirmMessage.textContent = form.dataset.confirm;
+                if (confirmTitle) confirmTitle.textContent = form.dataset.confirmTitle || defaultConfirmTitle;
+                confirmModal.classList.remove('hidden');
+                confirmModal.classList.add('flex');
+                confirmAccept?.focus();
+            };
+            const closeConfirm = () => {
+                pendingForm = null;
+                confirmModal?.classList.add('hidden');
+                confirmModal?.classList.remove('flex');
+            };
+
             document.addEventListener('submit', function (e) {
                 const form = e.target;
-                if (!form.dataset.confirm) return;
-                if (!window.confirm(form.dataset.confirm)) e.preventDefault();
+                if (!form.dataset.confirm || !confirmModal) return;
+                e.preventDefault();
+                openConfirm(form);
+            });
+
+            confirmAccept?.addEventListener('click', function () {
+                const form = pendingForm;
+                closeConfirm();
+                form?.submit(); // submit() native tidak memicu ulang event 'submit'
+            });
+            confirmCancel?.addEventListener('click', closeConfirm);
+            confirmOverlay?.addEventListener('click', closeConfirm);
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && confirmModal && !confirmModal.classList.contains('hidden')) closeConfirm();
             });
 
             // ── Bulk Select ───────────────────────────────────────────

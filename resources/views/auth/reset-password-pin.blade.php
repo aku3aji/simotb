@@ -24,7 +24,7 @@
                 <div class="relative">
                     <x-ui.icon name="mail" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                     <input id="email" name="email" type="email" value="{{ old('email', $email ?? '') }}"
-                        class="input-field pl-12" placeholder="email@toko.com" required autofocus>
+                        class="input-field pl-12 bg-slate-100 text-slate-500 cursor-not-allowed" placeholder="email@toko.com" required readonly>
                 </div>
             </div>
 
@@ -33,7 +33,7 @@
                 <div class="relative">
                     <x-ui.icon name="clipboard-list" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                     <input id="password" name="password" type="password"
-                        class="input-field pl-12 pr-12" placeholder="Minimal 8 karakter" required>
+                        class="input-field pl-12 pr-12" placeholder="Minimal 8 karakter" required autofocus>
                     <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700" data-password-toggle="password">
                         <x-ui.icon name="eye" class="h-5 w-5 block" data-icon-eye />
                         <x-ui.icon name="eye-off" class="h-5 w-5 hidden" data-icon-eye-off />

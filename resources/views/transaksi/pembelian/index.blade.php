@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Pembelian')
+@section('title', 'Stok Masuk')
 
 @section('content')
-    <x-ui.page-header title="Transaksi Pembelian" description="Catat barang masuk dari vendor dan pantau total pembelian per periode.">
-        <a href="{{ route('transaksi.pembelian.create') }}" class="btn btn-primary">
+    <x-ui.page-header title="Transaksi Stok Masuk" description="Catat barang masuk dari vendor dan pantau total stok masuk per periode.">
+        <a href="{{ route('transaksi.stok-masuk.create') }}" class="btn btn-primary">
             <x-ui.icon name="plus" class="h-4 w-4" />
-            <span>Buat Pembelian</span>
+            <span>Buat Stok Masuk</span>
         </a>
     </x-ui.page-header>
 
@@ -29,7 +29,7 @@
             <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_220px_180px_180px_auto_auto]">
                 <div class="relative">
                     <x-ui.icon name="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari nomor pembelian atau vendor">
+                    <input type="text" name="q" value="{{ $q }}" class="input-field pl-11" placeholder="Cari nomor stok masuk atau vendor">
                 </div>
                 <select name="vendor_id" class="select-field">
                     <option value="">Semua vendor</option>
@@ -49,7 +49,7 @@
         </form>
 
         @if ($pembelian->isEmpty())
-            <x-ui.empty-state title="Belum ada pembelian" description="Transaksi pembelian akan tampil di sini setelah Anda mencatat barang masuk." icon="receipt" />
+            <x-ui.empty-state title="Belum ada stok masuk" description="Transaksi stok masuk akan tampil di sini setelah Anda mencatat barang masuk." icon="receipt" />
         @else
             <div class="overflow-x-auto">
                 <table class="data-table">
@@ -59,6 +59,7 @@
                             <th>Vendor</th>
                             <x-ui.sortable-th column="tanggal" label="Tanggal" :sort-by="$sortBy" :sort-dir="$sortDir" />
                             <th>Total</th>
+                            <th>Pembayaran</th>
                             <th>Pencatat</th>
                             <th class="!text-center">Aksi</th>
                         </tr>
@@ -70,12 +71,28 @@
                                 <td>{{ $item->vendor->nama ?? '-' }}</td>
                                 <td>{{ optional($item->tanggal)->translatedFormat('d M Y') }}</td>
                                 <td class="font-semibold text-slate-900">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                                <td>
+                                    <span class="badge {{ $item->tipe_pembayaran === 'tunai' ? 'badge-success' : 'badge-warning' }}">{{ ucfirst($item->tipe_pembayaran) }}</span>
+                                    @if ($item->tipe_pembayaran === 'kredit')
+                                        <div class="mt-1 text-xs {{ $item->status_pembayaran === 'lunas' ? 'text-emerald-600' : 'text-rose-600' }}">
+                                            {{ str_replace('_', ' ', ucfirst($item->status_pembayaran)) }}
+                                            @if ($item->sisa_utang > 0)
+                                                · sisa Rp {{ number_format($item->sisa_utang, 0, ',', '.') }}
+                                            @endif
+                                        </div>
+                                    @endif
+                                </td>
                                 <td>{{ $item->user->name ?? '-' }}</td>
                                 <td>
-                                    <div class="flex justify-center">
-                                        <a href="{{ route('transaksi.pembelian.edit', $item) }}" class="btn btn-secondary px-3 py-2">
-                                            <x-ui.icon name="pencil" class="h-4 w-4" />
+                                    <div class="flex justify-center gap-2">
+                                        <a href="{{ route('transaksi.stok-masuk.show', $item) }}" class="btn btn-secondary px-3 py-2" title="Detail">
+                                            <x-ui.icon name="eye" class="h-4 w-4" />
                                         </a>
+                                        @if ($item->pembayaran_utang_count === 0)
+                                            <a href="{{ route('transaksi.stok-masuk.edit', $item) }}" class="btn btn-secondary px-3 py-2" title="Edit">
+                                                <x-ui.icon name="pencil" class="h-4 w-4" />
+                                            </a>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

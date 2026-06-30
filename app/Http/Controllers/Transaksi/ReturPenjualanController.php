@@ -130,7 +130,7 @@ class ReturPenjualanController extends Controller
             $this->recalculatePiutang($penjualan, $totalRetur);
         });
 
-        return redirect()->route('transaksi.retur-penjualan.index')
+        return redirect()->route('transaksi.retur-stok-keluar.index')
             ->with('success', 'Retur penjualan berhasil disimpan.');
     }
 
@@ -231,13 +231,13 @@ class ReturPenjualanController extends Controller
             }
         });
 
-        return redirect()->route('transaksi.retur-penjualan.index')
+        return redirect()->route('transaksi.retur-stok-keluar.index')
             ->with('success', 'Retur penjualan berhasil diperbarui.');
     }
 
     public function destroy(ReturPenjualan $returPenjualan): RedirectResponse
     {
-        return redirect()->route('transaksi.retur-penjualan.index')
+        return redirect()->route('transaksi.retur-stok-keluar.index')
             ->with('error', 'Retur penjualan yang sudah tersimpan tidak dapat dihapus.');
     }
 

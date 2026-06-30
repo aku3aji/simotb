@@ -29,10 +29,19 @@
         ['label' => 'Vendor', 'route' => 'master-data.vendor.index', 'icon' => 'truck', 'active' => request()->routeIs('master-data.vendor.*')],
 
         ['type' => 'section', 'label' => 'Transaksi'],
-        ['label' => 'Penjualan', 'route' => 'transaksi.penjualan.index', 'icon' => 'shopping-cart', 'active' => request()->routeIs('transaksi.penjualan.*')],
-        ['label' => 'Pembelian', 'route' => 'transaksi.pembelian.index', 'icon' => 'receipt', 'active' => request()->routeIs('transaksi.pembelian.*')],
-        ['label' => 'Piutang', 'route' => 'transaksi.pembayaran-piutang.index', 'icon' => 'wallet', 'active' => request()->routeIs('transaksi.pembayaran-piutang.*')],
-        ['label' => 'Retur Penjualan', 'route' => 'transaksi.retur-penjualan.index', 'icon' => 'rotate-ccw', 'active' => request()->routeIs('transaksi.retur-penjualan.*')],
+        ['label' => 'Stok Keluar', 'route' => 'transaksi.stok-keluar.index', 'icon' => 'shopping-cart', 'active' => request()->routeIs('transaksi.stok-keluar.*')],
+        ['label' => 'Stok Masuk', 'route' => 'transaksi.stok-masuk.index', 'icon' => 'receipt', 'active' => request()->routeIs('transaksi.stok-masuk.*')],
+        [
+            'label' => 'Piutang & Utang',
+            'icon' => 'wallet',
+            'active' => request()->routeIs('transaksi.pembayaran-piutang.*', 'transaksi.pembayaran-utang.*'),
+            'open' => request()->routeIs('transaksi.pembayaran-piutang.*', 'transaksi.pembayaran-utang.*'),
+            'children' => [
+                ['label' => 'Piutang', 'route' => 'transaksi.pembayaran-piutang.index', 'active' => request()->routeIs('transaksi.pembayaran-piutang.*')],
+                ['label' => 'Utang', 'route' => 'transaksi.pembayaran-utang.index', 'active' => request()->routeIs('transaksi.pembayaran-utang.*')],
+            ],
+        ],
+        ['label' => 'Retur Stok Keluar', 'route' => 'transaksi.retur-stok-keluar.index', 'icon' => 'rotate-ccw', 'active' => request()->routeIs('transaksi.retur-stok-keluar.*')],
 
         ['type' => 'section', 'label' => 'Operasional'],
         [

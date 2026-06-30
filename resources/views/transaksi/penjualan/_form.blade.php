@@ -29,7 +29,7 @@
     <section class="surface p-6">
         <div class="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
             <div>
-                <label class="label-text" for="nomor_penjualan">Nomor Penjualan</label>
+                <label class="label-text" for="nomor_penjualan">Nomor Stok Keluar</label>
                 <input id="nomor_penjualan" name="nomor_penjualan" type="text"
                     value="{{ $nomorValue }}"
                     class="input-field {{ !$isEdit ? 'bg-slate-100' : '' }}"
@@ -68,7 +68,7 @@
         <section class="surface">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-900">Item Penjualan</h2>
+                    <h2 class="text-lg font-bold text-slate-900">Item Stok Keluar</h2>
                     <p class="mt-1 text-sm text-slate-500">Pilih barang, atur kuantitas, dan sesuaikan harga jual jika diperlukan.</p>
                 </div>
                 <button type="button" class="btn btn-secondary" data-penjualan-add>
@@ -152,7 +152,7 @@
 
             <div class="mt-6 flex flex-wrap gap-3">
                 <button type="submit" class="btn btn-success w-full justify-center">{{ $submitLabel }}</button>
-                <a href="{{ route('transaksi.penjualan.index') }}" class="btn btn-secondary w-full justify-center">Batal</a>
+                <a href="{{ route('transaksi.stok-keluar.index') }}" class="btn btn-secondary w-full justify-center">Batal</a>
             </div>
         </aside>
     </div>

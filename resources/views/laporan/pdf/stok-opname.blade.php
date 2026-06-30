@@ -26,9 +26,10 @@
         table.data thead th { background: #1e40af; color: #fff; padding: 7px 8px; text-align: left; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
         table.data tbody td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9.5px; color: #334155; vertical-align: middle; }
         table.data tbody tr:nth-child(even) td { background: #f8fafc; }
-        table.data tfoot td { padding: 7px 8px; font-weight: 700; font-size: 10px; background: #eff6ff; border-top: 2px solid #1e40af; color: #1e40af; }
 
         .text-right { text-align: right; }
+        .pos { color: #15803d; font-weight: 700; }
+        .neg { color: #b91c1c; font-weight: 700; }
 
         .doc-footer { margin-top: 14px; padding-top: 7px; border-top: 1px solid #e2e8f0; width: 100%; border-collapse: collapse; }
         .doc-footer td { font-size: 8px; color: #94a3b8; }
@@ -41,7 +42,7 @@
     </div>
 
     <div class="doc-info">
-        <h2>Laporan Stok Masuk</h2>
+        <h2>Laporan Stok Opname</h2>
         <p>Dicetak pada {{ now()->translatedFormat('d F Y, H:i') }}
             @if ($tanggalMulai || $tanggalSelesai)
                 &nbsp;&mdash;&nbsp;Periode:
@@ -56,14 +57,14 @@
         <tr>
             <td width="50%">
                 <div class="stat-box">
-                    <div class="stat-label">Jumlah Transaksi</div>
-                    <div class="stat-value">{{ $pembelian->count() }}</div>
+                    <div class="stat-label">Jumlah Sesi</div>
+                    <div class="stat-value">{{ $totalSesi }}</div>
                 </div>
             </td>
             <td width="50%">
                 <div class="stat-box">
-                    <div class="stat-label">Total Stok Masuk</div>
-                    <div class="stat-value">Rp {{ number_format($totalPembelian, 0, ',', '.') }}</div>
+                    <div class="stat-label">Total Item Diperiksa</div>
+                    <div class="stat-value">{{ number_format($totalItem) }}</div>
                 </div>
             </td>
         </tr>
@@ -71,38 +72,32 @@
 
     <table class="data">
         <colgroup>
-            <col style="width:16%"><col style="width:20%"><col style="width:12%">
-            <col style="width:16%"><col style="width:14%"><col style="width:22%">
+            <col style="width:16%"><col style="width:13%"><col style="width:12%">
+            <col style="width:12%"><col style="width:27%"><col style="width:20%">
         </colgroup>
         <thead>
             <tr>
-                <th>Nomor</th>
-                <th>Vendor</th>
+                <th>Nomor Opname</th>
                 <th>Tanggal</th>
-                <th>Dicatat Oleh</th>
-                <th class="text-right">Total</th>
+                <th class="text-right">Jumlah Item</th>
+                <th class="text-right">Total Selisih</th>
                 <th>Catatan</th>
+                <th>Dicatat Oleh</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($pembelian as $item)
+            @foreach ($opname as $item)
+                @php $selisih = (int) ($item->detail_sum_selisih ?? 0); @endphp
                 <tr>
-                    <td>{{ $item->nomor_pembelian }}</td>
-                    <td>{{ $item->vendor->nama ?? '-' }}</td>
+                    <td>{{ $item->nomor_opname }}</td>
                     <td>{{ optional($item->tanggal)->translatedFormat('d M Y') }}</td>
+                    <td class="text-right">{{ number_format($item->detail_count) }}</td>
+                    <td class="text-right {{ $selisih > 0 ? 'pos' : ($selisih < 0 ? 'neg' : '') }}">{{ $selisih > 0 ? '+' : '' }}{{ number_format($selisih) }}</td>
+                    <td>{{ $item->catatan ?: '-' }}</td>
                     <td>{{ $item->user->name ?? '-' }}</td>
-                    <td class="text-right" style="font-weight:700">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
-                    <td>{{ $item->catatan ?? '-' }}</td>
                 </tr>
             @endforeach
         </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="4">Total {{ $pembelian->count() }} transaksi</td>
-                <td class="text-right">Rp {{ number_format($totalPembelian, 0, ',', '.') }}</td>
-                <td></td>
-            </tr>
-        </tfoot>
     </table>
 
     <table class="doc-footer">

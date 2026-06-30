@@ -50,6 +50,7 @@ class PembelianController extends Controller
 
         $pembelian = Pembelian::query()
             ->with(['vendor', 'user'])
+            ->withCount('pembayaranUtang')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($subQuery) use ($q) {
                     $subQuery->where('nomor_pembelian', 'like', '%' . $q . '%')
@@ -86,14 +87,25 @@ class PembelianController extends Controller
         $validated = $request->validated();
         $detailRows = $this->prepareDetailRows($validated['detail']);
         $total = (float) $detailRows->sum('subtotal');
+        $ringkasanPembayaran = $this->resolvePaymentSummary(
+            $validated['tipe_pembayaran'],
+            $total,
+            (float) $validated['dibayar'],
+            $validated['jatuh_tempo'] ?? null
+        );
         $userId = (int) auth()->id();
 
-        DB::transaction(function () use ($validated, $detailRows, $total, $userId) {
+        DB::transaction(function () use ($validated, $detailRows, $total, $ringkasanPembayaran, $userId) {
             $pembelian = Pembelian::create([
                 'nomor_pembelian' => $this->generateNomor(),
                 'vendor_id' => $validated['vendor_id'],
                 'tanggal' => $validated['tanggal'],
+                'tipe_pembayaran' => $validated['tipe_pembayaran'],
                 'total' => $total,
+                'dibayar' => $ringkasanPembayaran['dibayar'],
+                'sisa_utang' => $ringkasanPembayaran['sisa_utang'],
+                'status_pembayaran' => $ringkasanPembayaran['status_pembayaran'],
+                'jatuh_tempo' => $ringkasanPembayaran['jatuh_tempo'],
                 'catatan' => $validated['catatan'] ?? null,
                 'user_id' => $userId,
             ]);
@@ -136,8 +148,20 @@ class PembelianController extends Controller
             }
         });
 
-        return redirect()->route('transaksi.pembelian.index')
+        return redirect()->route('transaksi.stok-masuk.index')
             ->with('success', 'Transaksi pembelian berhasil disimpan.');
+    }
+
+    public function show(Pembelian $pembelian): View
+    {
+        $pembelian->load([
+            'detail.barang',
+            'vendor',
+            'user',
+            'pembayaranUtang.user',
+        ]);
+
+        return view('transaksi.pembelian.show', compact('pembelian'));
     }
 
     public function edit(Pembelian $pembelian): View
@@ -155,9 +179,23 @@ class PembelianController extends Controller
         $validated = $request->validated();
         $detailRows = $this->prepareDetailRows($validated['detail']);
         $newDetails = $detailRows->keyBy('barang_id');
+        $ringkasanPembayaran = $this->resolvePaymentSummary(
+            $validated['tipe_pembayaran'],
+            (float) $detailRows->sum('subtotal'),
+            (float) $validated['dibayar'],
+            $validated['jatuh_tempo'] ?? null
+        );
         $userId = (int) auth()->id();
 
-        DB::transaction(function () use ($validated, $detailRows, $newDetails, $pembelian, $userId) {
+        DB::transaction(function () use ($validated, $detailRows, $newDetails, $ringkasanPembayaran, $pembelian, $userId) {
+            $pembelian = Pembelian::query()->lockForUpdate()->findOrFail($pembelian->id);
+
+            if ($pembelian->pembayaranUtang()->exists()) {
+                throw ValidationException::withMessages([
+                    'error' => ['Stok masuk yang sudah memiliki pembayaran utang tidak dapat diubah.'],
+                ]);
+            }
+
             $existingDetails = $pembelian->detail()->get()->keyBy('barang_id');
             $affectedBarangIds = $existingDetails->keys()->merge($newDetails->keys())->unique()->values();
 
@@ -184,7 +222,12 @@ class PembelianController extends Controller
                 'nomor_pembelian' => $validated['nomor_pembelian'],
                 'vendor_id' => $validated['vendor_id'],
                 'tanggal' => $validated['tanggal'],
+                'tipe_pembayaran' => $validated['tipe_pembayaran'],
                 'total' => (float) $detailRows->sum('subtotal'),
+                'dibayar' => $ringkasanPembayaran['dibayar'],
+                'sisa_utang' => $ringkasanPembayaran['sisa_utang'],
+                'status_pembayaran' => $ringkasanPembayaran['status_pembayaran'],
+                'jatuh_tempo' => $ringkasanPembayaran['jatuh_tempo'],
                 'catatan' => $validated['catatan'] ?? null,
             ]);
 
@@ -226,13 +269,13 @@ class PembelianController extends Controller
             }
         });
 
-        return redirect()->route('transaksi.pembelian.index')
+        return redirect()->route('transaksi.stok-masuk.index')
             ->with('success', 'Transaksi pembelian berhasil diperbarui.');
     }
 
     public function destroy(Pembelian $pembelian): RedirectResponse
     {
-        return redirect()->route('transaksi.pembelian.index')
+        return redirect()->route('transaksi.stok-masuk.index')
             ->with('error', 'Transaksi pembelian yang sudah tersimpan tidak dapat dihapus.');
     }
 
@@ -273,5 +316,39 @@ class PembelianController extends Controller
                 'subtotal' => $jumlah * $hargaBeli,
             ];
         });
+    }
+
+    private function resolvePaymentSummary(
+        string $tipePembayaran,
+        float $total,
+        float $dibayar,
+        ?string $jatuhTempo = null
+    ): array
+    {
+        if ($tipePembayaran === Pembelian::TIPE_TUNAI) {
+            return [
+                'dibayar' => $total,
+                'sisa_utang' => 0,
+                'status_pembayaran' => Pembelian::STATUS_LUNAS,
+                'jatuh_tempo' => null,
+            ];
+        }
+
+        if ($dibayar > $total) {
+            throw ValidationException::withMessages([
+                'dibayar' => ['Jumlah dibayar tidak boleh melebihi total stok masuk.'],
+            ]);
+        }
+
+        $sisaUtang = $total - $dibayar;
+
+        return [
+            'dibayar' => $dibayar,
+            'sisa_utang' => $sisaUtang,
+            'status_pembayaran' => $dibayar <= 0
+                ? Pembelian::STATUS_BELUM_LUNAS
+                : ($sisaUtang > 0 ? Pembelian::STATUS_SEBAGIAN : Pembelian::STATUS_LUNAS),
+            'jatuh_tempo' => $jatuhTempo,
+        ];
     }
 }
