@@ -26,12 +26,12 @@
 
 <div class="space-y-6">
     <section class="surface p-6">
-        <div class="grid gap-6 lg:grid-cols-3">
+        <div class="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label class="label-text" for="nomor_pembelian">Nomor Stok Masuk</label>
                 <input id="nomor_pembelian" name="nomor_pembelian" type="text"
                     value="{{ $nomorValue }}"
-                    class="input-field {{ !$isEdit ? 'bg-slate-100' : '' }}"
+                    class="input-field h-[62px] {{ !$isEdit ? 'bg-slate-100' : '' }}"
                     {{ !$isEdit ? 'readonly' : '' }}
                     required>
                 @if (!$isEdit)
@@ -39,13 +39,19 @@
                 @endif
             </div>
             <div>
+                <label class="label-text" for="tanggal">Tanggal</label>
+                <input id="tanggal" name="tanggal" type="date"
+                    value="{{ old('tanggal', isset($pembelian->tanggal) ? $pembelian->tanggal->format('Y-m-d') : now()->format('Y-m-d')) }}"
+                    class="input-field h-[62px]" required>
+            </div>
+            <div class="xl:col-span-2">
                 <label class="label-text" for="vendor_id">Vendor</label>
                 <select id="vendor_id" name="vendor_id" class="select-field" required>
                     <option value="">Pilih vendor</option>
+                    <option value="__new__" @selected($vendorSelected === '__new__')>+ Tambah vendor baru...</option>
                     @foreach ($vendorList as $item)
                         <option value="{{ $item->id }}" @selected($vendorSelected == $item->id)>{{ $item->nama }}</option>
                     @endforeach
-                    <option value="__new__" @selected($vendorSelected === '__new__')>+ Tambah vendor baru...</option>
                 </select>
                 <div id="vendorBaruWrap" class="{{ old('vendor_id') === '__new__' ? '' : 'hidden' }} mt-2">
                     <input type="text" name="vendor_nama_baru"
@@ -53,12 +59,6 @@
                         class="input-field"
                         placeholder="Masukkan nama vendor baru">
                 </div>
-            </div>
-            <div>
-                <label class="label-text" for="tanggal">Tanggal</label>
-                <input id="tanggal" name="tanggal" type="date"
-                    value="{{ old('tanggal', isset($pembelian->tanggal) ? $pembelian->tanggal->format('Y-m-d') : now()->format('Y-m-d')) }}"
-                    class="input-field" required>
             </div>
         </div>
     </section>
@@ -167,6 +167,16 @@
                     vendorBaruWrap.classList.toggle('hidden', this.value !== '__new__');
                 });
 
+                // Vendor: TomSelect dengan pencarian
+                if (vendorSelect && !vendorSelect.tomselect) {
+                    new TomSelect(vendorSelect, {
+                        plugins: { dropdown_input: {} },
+                        maxOptions: null,
+                        highlight: true,
+                        placeholder: 'Cari atau pilih vendor',
+                    });
+                }
+
                 const formatRupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
                 const currentType = () => document.querySelector('input[name="tipe_pembayaran"]:checked')?.value || 'tunai';
 
@@ -213,11 +223,11 @@
                         const harga = Number(row.harga_beli || (selected ? selected.harga_beli : 0));
                         const subtotal = jumlah * harga;
 
-                        const barangSelectOptions = barangOptions.map(item => `
+                        const barangSelectOptions = `<option value="__new__" ${isNew ? 'selected' : ''}>+ Tambah barang baru...</option>` + barangOptions.map(item => `
                             <option value="${item.id}" ${String(row.barang_id ?? '') === String(item.id) ? 'selected' : ''}>
                                 ${item.nama} (${item.kode})
                             </option>
-                        `).join('') + `<option value="__new__" ${isNew ? 'selected' : ''}>+ Tambah barang baru...</option>`;
+                        `).join('');
 
                         const barangNamaBaruInput = isNew ? `
                             <input type="text"

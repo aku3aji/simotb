@@ -32,7 +32,7 @@
                 <label class="label-text" for="nomor_penjualan">Nomor Stok Keluar</label>
                 <input id="nomor_penjualan" name="nomor_penjualan" type="text"
                     value="{{ $nomorValue }}"
-                    class="input-field {{ !$isEdit ? 'bg-slate-100' : '' }}"
+                    class="input-field h-[62px] {{ !$isEdit ? 'bg-slate-100' : '' }}"
                     {{ !$isEdit ? 'readonly' : '' }}
                     required>
                 @if (!$isEdit)
@@ -43,16 +43,16 @@
                 <label class="label-text" for="tanggal">Tanggal</label>
                 <input id="tanggal" name="tanggal" type="date"
                     value="{{ old('tanggal', isset($penjualan->tanggal) ? $penjualan->tanggal->format('Y-m-d') : now()->format('Y-m-d')) }}"
-                    class="input-field" required>
+                    class="input-field h-[62px]" required>
             </div>
             <div class="xl:col-span-2">
                 <label class="label-text" for="pelanggan_id">Pelanggan</label>
                 <select id="pelanggan_id" name="pelanggan_id" class="select-field">
                     <option value="">Pelanggan Umum</option>
+                    <option value="__new__" @selected($pelangganSelected === '__new__')>+ Tambah pelanggan baru...</option>
                     @foreach ($pelangganList as $item)
                         <option value="{{ $item->id }}" @selected($pelangganSelected == $item->id)>{{ $item->nama }}</option>
                     @endforeach
-                    <option value="__new__" @selected($pelangganSelected === '__new__')>+ Tambah pelanggan baru...</option>
                 </select>
                 <div id="pelangganBaruWrap" class="{{ old('pelanggan_id') === '__new__' ? '' : 'hidden' }} mt-2">
                     <input type="text" name="pelanggan_nama_baru"
@@ -182,6 +182,17 @@
                     pelangganBaruWrap.classList.toggle('hidden', this.value !== '__new__');
                 });
 
+                // Pelanggan: TomSelect dengan pencarian
+                if (pelangganSelect && !pelangganSelect.tomselect) {
+                    new TomSelect(pelangganSelect, {
+                        plugins: { dropdown_input: {} },
+                        allowEmptyOption: true,
+                        maxOptions: null,
+                        highlight: true,
+                        placeholder: 'Cari atau pilih pelanggan',
+                    });
+                }
+
                 const formatRupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
                 const currentType = () => document.querySelector('input[name="tipe_pembayaran"]:checked')?.value || 'tunai';
 
@@ -228,11 +239,11 @@
                         const harga = Number(row.harga_jual || (selected ? selected.harga_jual : 0));
                         const subtotal = jumlah * harga;
 
-                        const barangSelectOptions = barangOptions.map(item => `
+                        const barangSelectOptions = `<option value="__new__" ${isNew ? 'selected' : ''}>+ Tambah barang baru...</option>` + barangOptions.map(item => `
                             <option value="${item.id}" ${String(row.barang_id ?? '') === String(item.id) ? 'selected' : ''}>
                                 ${item.nama} (${item.kode})
                             </option>
-                        `).join('') + `<option value="__new__" ${isNew ? 'selected' : ''}>+ Tambah barang baru...</option>`;
+                        `).join('');
 
                         const barangNamaBaruInput = isNew ? `
                             <input type="text"
