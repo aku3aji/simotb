@@ -20,7 +20,9 @@
     </form>
 
     <div class="mb-6 flex flex-wrap items-center gap-2">
-        <a href="{{ route('pegawai.pegawai.index') }}" class="btn {{ request()->routeIs('pegawai.pegawai.*') ? 'btn-primary' : 'btn-secondary' }}">Data Pegawai</a>
+        @if (auth()->user()->isOwner())
+            <a href="{{ route('pegawai.pegawai.index') }}" class="btn {{ request()->routeIs('pegawai.pegawai.*') ? 'btn-primary' : 'btn-secondary' }}">Data Pegawai</a>
+        @endif
         <a href="{{ route('pegawai.absensi.index') }}" class="btn {{ request()->routeIs('pegawai.absensi.*') ? 'btn-primary' : 'btn-secondary' }}">Absensi</a>
         <a href="{{ route('pegawai.absensi.catat-massal') }}" class="btn btn-secondary ml-auto">
             <x-ui.icon name="clipboard-list" class="h-4 w-4" />

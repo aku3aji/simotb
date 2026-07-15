@@ -56,8 +56,11 @@
         ],
     ];
 
+    $menu[] = ['type' => 'section', 'label' => 'Kepegawaian'];
+    $menu[] = ['label' => 'Absensi', 'route' => 'pegawai.absensi.index', 'icon' => 'user-check', 'active' => request()->routeIs('pegawai.absensi.*')];
+
     if ($user?->isOwner()) {
-        $menu[] = ['label' => 'Pegawai & Absensi', 'route' => 'pegawai.pegawai.index', 'icon' => 'users', 'active' => request()->routeIs('pegawai.*')];
+        $menu[] = ['label' => 'Pegawai', 'route' => 'pegawai.pegawai.index', 'icon' => 'users', 'active' => request()->routeIs('pegawai.pegawai.*')];
         $menu[] = ['type' => 'section', 'label' => 'Laporan'];
         $menu[] = ['label' => 'Laporan', 'route' => 'laporan.stok', 'icon' => 'file-bar-chart', 'active' => request()->routeIs('laporan.*')];
         $menu[] = ['type' => 'section', 'label' => 'Pengguna'];

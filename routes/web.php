@@ -113,12 +113,16 @@ Route::middleware('auth')->group(function () {
                 ->parameters(['retur-stok-keluar' => 'returPenjualan']);
         });
 
-    Route::middleware('owner')
-        ->prefix('pegawai')
+    Route::prefix('pegawai')
         ->as('pegawai.')
         ->group(function () {
-            Route::delete('pegawai/bulk-destroy', [PegawaiController::class, 'destroyBulk'])->name('pegawai.bulk-destroy');
-            Route::resource('pegawai', PegawaiController::class)->except(['show']);
+            // Manajemen data pegawai: khusus Owner.
+            Route::middleware('owner')->group(function () {
+                Route::delete('pegawai/bulk-destroy', [PegawaiController::class, 'destroyBulk'])->name('pegawai.bulk-destroy');
+                Route::resource('pegawai', PegawaiController::class)->except(['show']);
+            });
+
+            // Absensi: dapat diakses Owner maupun Admin.
             Route::get('absensi/catat-massal', [AbsensiController::class, 'cataMassal'])->name('absensi.catat-massal');
             Route::post('absensi/catat-massal', [AbsensiController::class, 'storeMassal'])->name('absensi.store-massal');
             Route::delete('absensi/bulk-destroy', [AbsensiController::class, 'destroyBulk'])->name('absensi.bulk-destroy');
