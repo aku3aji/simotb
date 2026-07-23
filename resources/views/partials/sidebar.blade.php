@@ -57,14 +57,18 @@
     ];
 
     $menu[] = ['type' => 'section', 'label' => 'Kepegawaian'];
+    if ($user?->isOwner()) {
+        $menu[] = ['label' => 'Pegawai', 'route' => 'pegawai.pegawai.index', 'icon' => 'users', 'active' => request()->routeIs('pegawai.pegawai.*')];
+    }
     $menu[] = ['label' => 'Absensi', 'route' => 'pegawai.absensi.index', 'icon' => 'user-check', 'active' => request()->routeIs('pegawai.absensi.*')];
 
     if ($user?->isOwner()) {
-        $menu[] = ['label' => 'Pegawai', 'route' => 'pegawai.pegawai.index', 'icon' => 'users', 'active' => request()->routeIs('pegawai.pegawai.*')];
         $menu[] = ['type' => 'section', 'label' => 'Laporan'];
         $menu[] = ['label' => 'Laporan', 'route' => 'laporan.stok', 'icon' => 'file-bar-chart', 'active' => request()->routeIs('laporan.*')];
         $menu[] = ['type' => 'section', 'label' => 'Pengguna'];
         $menu[] = ['label' => 'User', 'route' => 'pengguna.user.index', 'icon' => 'clipboard-list', 'active' => request()->routeIs('pengguna.*')];
+        $menu[] = ['type' => 'section', 'label' => 'Sistem'];
+        $menu[] = ['label' => 'Pengaturan', 'route' => 'pengaturan.edit', 'icon' => 'settings', 'active' => request()->routeIs('pengaturan.*')];
     }
 @endphp
 

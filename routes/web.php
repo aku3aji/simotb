@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\Inventory\MutasiStokController;
 use App\Http\Controllers\Inventory\StokOpnameController;
@@ -136,6 +137,12 @@ Route::middleware('auth')->group(function () {
             Route::delete('user/bulk-destroy', [UserController::class, 'destroyBulk'])->name('user.bulk-destroy');
             Route::resource('user', UserController::class)->except(['show']);
         });
+
+    // Pengaturan kebijakan operasional: khusus Owner.
+    Route::middleware('owner')->group(function () {
+        Route::get('pengaturan', [PengaturanController::class, 'edit'])->name('pengaturan.edit');
+        Route::put('pengaturan', [PengaturanController::class, 'update'])->name('pengaturan.update');
+    });
 
     Route::middleware('owner')
         ->prefix('laporan')

@@ -23,6 +23,10 @@
 
     $nomorValue = old('nomor_penjualan', $isEdit ? $penjualan->nomor_penjualan : ($nomorPenjualan ?? ''));
     $pelangganSelected = old('pelanggan_id', $penjualan->pelanggan_id ?? '');
+
+    $tanggalValue = old('tanggal', isset($penjualan->tanggal) ? $penjualan->tanggal->format('Y-m-d') : now()->format('Y-m-d'));
+    $maksHariJT = $maksHariJatuhTempo ?? \App\Models\Pengaturan::maksHariJatuhTempo();
+    $maksJatuhTempoDate = \Illuminate\Support\Carbon::parse($tanggalValue)->addDays($maksHariJT)->format('Y-m-d');
 @endphp
 
 <div class="space-y-6">
@@ -42,7 +46,7 @@
             <div>
                 <label class="label-text" for="tanggal">Tanggal</label>
                 <input id="tanggal" name="tanggal" type="date"
-                    value="{{ old('tanggal', isset($penjualan->tanggal) ? $penjualan->tanggal->format('Y-m-d') : now()->format('Y-m-d')) }}"
+                    value="{{ $tanggalValue }}"
                     class="input-field h-[62px]" required>
             </div>
             <div class="xl:col-span-2">
@@ -138,7 +142,10 @@
                     <label class="label-text" for="jatuh_tempo">Jatuh Tempo</label>
                     <input id="jatuh_tempo" name="jatuh_tempo" type="date"
                         value="{{ old('jatuh_tempo', isset($penjualan->jatuh_tempo) ? $penjualan->jatuh_tempo->format('Y-m-d') : '') }}"
+                        min="{{ $tanggalValue }}"
+                        max="{{ $maksJatuhTempoDate }}"
                         class="input-field" data-penjualan-jatuh-tempo>
+                    <p class="hint-text mt-1">Maksimal {{ $maksHariJT }} hari dari tanggal transaksi (ketetapan owner).</p>
                 </div>
                 <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                     <p class="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">Sisa Piutang</p>
@@ -174,6 +181,32 @@
                 const dibayarInput = document.querySelector('[data-penjualan-dibayar]');
                 const jatuhTempoWrap = document.querySelector('[data-penjualan-jatuh-tempo-wrap]');
                 const jatuhTempoInput = document.querySelector('[data-penjualan-jatuh-tempo]');
+                const tanggalInput = document.getElementById('tanggal');
+                const maksHariJatuhTempo = {{ (int) $maksHariJT }};
+
+                // Batas jatuh tempo mengikuti tanggal transaksi: min = tanggal, max = tanggal + N hari.
+                const addDaysStr = (dateStr, days) => {
+                    const d = new Date(dateStr);
+                    if (isNaN(d)) return '';
+                    d.setUTCDate(d.getUTCDate() + days);
+                    return d.toISOString().slice(0, 10);
+                };
+
+                const updateJatuhTempoRange = () => {
+                    if (!tanggalInput || !jatuhTempoInput || !tanggalInput.value) return;
+                    const maxStr = addDaysStr(tanggalInput.value, maksHariJatuhTempo);
+                    if (!maxStr) return;
+                    jatuhTempoInput.min = tanggalInput.value;
+                    jatuhTempoInput.max = maxStr;
+                    if (jatuhTempoInput.value && jatuhTempoInput.value > maxStr) {
+                        jatuhTempoInput.value = maxStr;
+                    }
+                    if (jatuhTempoInput.value && jatuhTempoInput.value < tanggalInput.value) {
+                        jatuhTempoInput.value = tanggalInput.value;
+                    }
+                };
+
+                tanggalInput?.addEventListener('change', updateJatuhTempoRange);
 
                 // Pelanggan inline
                 const pelangganSelect = document.getElementById('pelanggan_id');
@@ -366,6 +399,7 @@
                 dibayarInput.addEventListener('input', syncSummary);
 
                 render();
+                updateJatuhTempoRange();
             });
         </script>
     @endpush

@@ -11,6 +11,10 @@
                 <span>Hapus Terpilih</span>
             </button>
         </div>
+        <a href="{{ route('pegawai.absensi.catat-massal') }}" class="btn btn-primary">
+            <x-ui.icon name="clipboard-list" class="h-4 w-4" />
+            <span>Catat Massal</span>
+        </a>
     </x-ui.page-header>
 
     <form id="bulk-form" method="POST" action="{{ route('pegawai.absensi.bulk-destroy') }}"
@@ -18,17 +22,6 @@
         @csrf
         @method('DELETE')
     </form>
-
-    <div class="mb-6 flex flex-wrap items-center gap-2">
-        @if (auth()->user()->isOwner())
-            <a href="{{ route('pegawai.pegawai.index') }}" class="btn {{ request()->routeIs('pegawai.pegawai.*') ? 'btn-primary' : 'btn-secondary' }}">Data Pegawai</a>
-        @endif
-        <a href="{{ route('pegawai.absensi.index') }}" class="btn {{ request()->routeIs('pegawai.absensi.*') ? 'btn-primary' : 'btn-secondary' }}">Absensi</a>
-        <a href="{{ route('pegawai.absensi.catat-massal') }}" class="btn btn-secondary ml-auto">
-            <x-ui.icon name="clipboard-list" class="h-4 w-4" />
-            <span>Catat Massal</span>
-        </a>
-    </div>
 
     <section class="surface overflow-hidden">
         <form method="GET" class="border-b border-slate-200 px-5 py-4">

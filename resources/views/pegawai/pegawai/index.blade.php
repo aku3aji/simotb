@@ -23,11 +23,6 @@
         @method('DELETE')
     </form>
 
-    <div class="mb-6 flex gap-2 overflow-x-auto">
-        <a href="{{ route('pegawai.pegawai.index') }}" class="btn {{ request()->routeIs('pegawai.pegawai.*') ? 'btn-primary' : 'btn-secondary' }}">Data Pegawai</a>
-        <a href="{{ route('pegawai.absensi.index') }}" class="btn {{ request()->routeIs('pegawai.absensi.*') ? 'btn-primary' : 'btn-secondary' }}">Absensi</a>
-    </div>
-
     <section class="surface overflow-hidden">
         <form method="GET" class="border-b border-slate-200 px-5 py-4">
             <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto_auto]">

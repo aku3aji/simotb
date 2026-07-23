@@ -8,6 +8,7 @@ use App\Http\Requests\Transaksi\StorePenjualanRequest;
 use App\Http\Requests\Transaksi\UpdatePenjualanRequest;
 use App\Models\Barang;
 use App\Models\Pelanggan;
+use App\Models\Pengaturan;
 use App\Models\Penjualan;
 use App\Models\StokMutasi;
 use Illuminate\Http\RedirectResponse;
@@ -322,6 +323,7 @@ class PenjualanController extends Controller
                 ->aktif()
                 ->orderBy('nama')
                 ->get(),
+            'maksHariJatuhTempo' => Pengaturan::maksHariJatuhTempo(),
         ];
     }
 

@@ -5,7 +5,9 @@ namespace App\Http\Requests\Transaksi;
 use App\Http\Requests\BaseFormRequest;
 use App\Models\Barang;
 use App\Models\Pelanggan;
+use App\Models\Pengaturan;
 use App\Models\Penjualan;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class StorePenjualanRequest extends BaseFormRequest
@@ -63,7 +65,7 @@ class StorePenjualanRequest extends BaseFormRequest
             'tanggal' => ['required', 'date'],
             'tipe_pembayaran' => ['required', Rule::in([Penjualan::TIPE_TUNAI, Penjualan::TIPE_KREDIT])],
             'dibayar' => ['required', 'numeric', 'gte:0'],
-            'jatuh_tempo' => ['nullable', 'required_if:tipe_pembayaran,kredit', 'date', 'after_or_equal:tanggal'],
+            'jatuh_tempo' => $this->jatuhTempoRules(),
             'catatan' => ['nullable', 'string', 'max:1000'],
             'detail' => ['required', 'array', 'min:1'],
             'detail.*.barang_id' => ['required', 'distinct', 'exists:barang,id'],
@@ -72,6 +74,45 @@ class StorePenjualanRequest extends BaseFormRequest
             'newly_created_barang_ids' => ['nullable', 'array'],
             'newly_created_barang_ids.*' => ['integer'],
         ];
+    }
+
+    /**
+     * Aturan untuk jatuh tempo penjualan kredit, termasuk batas maksimal
+     * tenor (dalam hari) yang ditetapkan owner melalui halaman Pengaturan.
+     *
+     * @return array<int, mixed>
+     */
+    protected function jatuhTempoRules(): array
+    {
+        $rules = [
+            'nullable',
+            'required_if:tipe_pembayaran,' . Penjualan::TIPE_KREDIT,
+            'date',
+            'after_or_equal:tanggal',
+        ];
+
+        $tanggal = $this->input('tanggal');
+
+        if (is_string($tanggal) && $tanggal !== '') {
+            try {
+                $batas = Carbon::parse($tanggal)
+                    ->addDays(Pengaturan::maksHariJatuhTempo())
+                    ->toDateString();
+                $rules[] = 'before_or_equal:' . $batas;
+            } catch (\Throwable $e) {
+                // Tanggal tidak valid akan ditangkap oleh aturan 'date' pada field tanggal.
+            }
+        }
+
+        return $rules;
+    }
+
+    public function messages(): array
+    {
+        return array_merge(parent::messages(), [
+            'jatuh_tempo.before_or_equal' => 'Jatuh tempo maksimal ' . Pengaturan::maksHariJatuhTempo()
+                . ' hari dari tanggal transaksi, sesuai ketetapan owner.',
+        ]);
     }
 
     public function attributes(): array
